@@ -1,3 +1,15 @@
 spring:
   application:
     name: gaikingCopilot
+
+logging:
+  file:
+    name: logs/gaikingCopilot.log
+  level:
+    root: INFO
+    "[it.nttdata.gaikingcopilot]": DEBUG
+    "[org.springframework.ai.model.tool]": DEBUG
+    "[org.springframework.ai.model.chat]": DEBUG
+    "[org.springframework.ai.ollama]": DEBUG
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
