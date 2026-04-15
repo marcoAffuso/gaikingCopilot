@@ -3,6 +3,7 @@ package it.nttdata.gaikingCopilot.copilot;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.stereotype.Service;
 
@@ -49,16 +50,30 @@ public class CopilotService {
                             .setReasoningEffort("high")
             ).get()) {
 
-                var responseEvent = session.sendAndWait(
-                        new MessageOptions().setPrompt(prompt)
-                ).get();
+                try{
+                    
+                    var responseEvent = session.sendAndWait(
+                            new MessageOptions().setPrompt(prompt),
+                            5 * 60 * 1000L // timeout di 5 minuti
+                    ).get();
 
-                String response = responseEvent != null
-                        ? responseEvent.getData().content()
-                        : null;
+                    String response = responseEvent != null
+                            ? responseEvent.getData().content()
+                            : null;
 
-                log.info("Received response: {}", response);
-                return response;
+                    log.info("Received response: {}", response);
+                    return response;
+
+                }catch(ExecutionException e){
+                    if (e.getCause() instanceof TimeoutException) {
+                        log.error("Request timed out after waiting for 5 minutes.");
+                        session.abort().get();
+                        return "Error: Request timed out";
+                    } else {
+                        throw e;
+                    }
+                }
+
             }
         }
     }

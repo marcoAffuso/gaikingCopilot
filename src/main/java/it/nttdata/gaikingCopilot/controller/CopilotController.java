@@ -36,12 +36,19 @@ public class CopilotController {
                 .toList();
     }
 
-    @GetMapping("/getTestCase")
-    public String getTestCase(@RequestParam String modelName, @RequestParam String prompt) throws InterruptedException, ExecutionException{
+    @GetMapping("/getTestCopilot")
+    public String getTestCopilot(@RequestParam String modelName, @RequestParam String prompt, @RequestParam String streaming) throws InterruptedException, ExecutionException{
         log.info("Received request with param: {}", modelName);
-        return copilotService.getResponseCopilotWhitOutStreaming(modelName, prompt);
-        //return copilotService.getResponseCopilotWithStreaming(modelName, prompt);
+
+        return switch (streaming.toLowerCase()) {
+            case "true" -> copilotService.getResponseCopilotWithStreaming(modelName, prompt);
+            case "false" -> copilotService.getResponseCopilotWhitOutStreaming(modelName, prompt);
+            default -> throw new IllegalArgumentException("Invalid value for 'streaming' parameter. Expected 'true' or 'false'.");
+        };
     }
+
+
+    
     
     
 
