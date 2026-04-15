@@ -24,23 +24,38 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class CopilotService {
 
-    public List<ModelInfo> getCopilotModel() throws InterruptedException, ExecutionException {
+    public List<ModelInfo> getCopilotModel() throws InterruptedException {
         log.info("getCopilotModel");
+
         try (CopilotClient client = new CopilotClient()) {
             log.info("CopilotClient created successfully.");
             log.info("Retrieving Copilot models...");
+
             List<ModelInfo> models = client.listModels().get();
+
             log.info("Retrieved {} models.", models.size());
             return models;
+
+        } catch (ExecutionException e) {
+            Throwable cause = rootCause(e);
+
+            log.error("Failed to retrieve Copilot models. causeType={}, cause={}",
+                    cause.getClass().getName(),
+                    cause.getMessage(),
+                    cause);
+
+            throw buildCopilotException("Errore durante il recupero dei modelli Copilot", cause);
         }
     }
 
-    public String getResponseCopilotWhitOutStreaming(String model, String prompt) throws InterruptedException, ExecutionException{
+    public String getResponseCopilotWhitOutStreaming(String model, String prompt) throws InterruptedException {
         log.info("getResponseCopilotWhitOutStreaming");
+
+        validateInput(model, prompt);
 
         try (CopilotClient client = new CopilotClient()) {
             client.start().get();
-            log.info("CopilotClient started successfully.");
+            log.info("CopilotClient started successfully. model={}, promptLength={}", model, prompt.length());
 
             try (CopilotSession session = client.createSession(
                     new SessionConfig()
@@ -50,40 +65,43 @@ public class CopilotService {
                             .setReasoningEffort("high")
             ).get()) {
 
-                try{
-                    
-                    var responseEvent = session.sendAndWait(
-                            new MessageOptions().setPrompt(prompt),
-                            5 * 60 * 1000L // timeout di 5 minuti
-                    ).get();
+                var responseEvent = session.sendAndWait(
+                        new MessageOptions().setPrompt(prompt),
+                        5 * 60 * 1000L
+                ).get();
 
-                    String response = responseEvent != null
-                            ? responseEvent.getData().content()
-                            : null;
+                String response = responseEvent != null
+                        ? responseEvent.getData().content()
+                        : null;
 
-                    log.info("Received response: {}", response);
-                    return response;
+                log.info("Received non-streaming response. responseLength={}",
+                        response != null ? response.length() : 0);
 
-                }catch(ExecutionException e){
-                    if (e.getCause() instanceof TimeoutException) {
-                        log.error("Request timed out after waiting for 5 minutes.");
-                        session.abort().get();
-                        return "Error: Request timed out";
-                    } else {
-                        throw e;
-                    }
-                }
-
+                return response;
             }
+
+        } catch (ExecutionException e) {
+            Throwable cause = rootCause(e);
+
+            log.error("Copilot non-streaming request failed. model={}, promptLength={}, causeType={}, cause={}",
+                    model,
+                    prompt != null ? prompt.length() : 0,
+                    cause.getClass().getName(),
+                    cause.getMessage(),
+                    cause);
+
+            throw buildCopilotException("Errore durante la chiamata non-streaming a Copilot", cause);
         }
     }
 
-    public String getResponseCopilotWithStreaming(String model, String prompt) throws InterruptedException, ExecutionException {
+    public String getResponseCopilotWithStreaming(String model, String prompt) throws InterruptedException {
         log.info("getResponseCopilotWithStreaming");
+
+        validateInput(model, prompt);
 
         try (CopilotClient client = new CopilotClient()) {
             client.start().get();
-            log.info("CopilotClient started successfully.");
+            log.info("CopilotClient started successfully. model={}, promptLength={}", model, prompt.length());
 
             try (CopilotSession copilotSession = client.createSession(
                     new SessionConfig()
@@ -101,16 +119,15 @@ public class CopilotService {
                     String chunk = delta.getData().deltaContent();
                     if (chunk != null) {
                         responseBuilder.append(chunk);
-                        log.info("Chunk: {}", chunk);
+                        log.debug("Received chunk. chunkLength={}", chunk.length());
                     }
                 });
 
                 copilotSession.on(AssistantMessageEvent.class, msg -> {
                     String content = msg.getData().content();
-                    log.info("Final response event: {}", content);
+                    log.info("Final response event received. contentLength={}",
+                            content != null ? content.length() : 0);
 
-                    // Fallback: se per qualche motivo i delta non sono arrivati,
-                    // uso il contenuto completo del messaggio finale.
                     if (responseBuilder.isEmpty() && content != null) {
                         responseBuilder.append(content);
                     }
@@ -118,31 +135,127 @@ public class CopilotService {
 
                 copilotSession.on(SessionErrorEvent.class, err -> {
                     String errorMessage = err.getData().message();
-                    log.error("Error: {}", errorMessage);
+                    log.error("Streaming session error: {}", errorMessage);
+
                     errorFuture.complete(errorMessage);
                     done.completeExceptionally(new RuntimeException(errorMessage));
                 });
 
-                copilotSession.on(SessionIdleEvent.class, idle -> done.complete(null));
-
+                copilotSession.on(SessionIdleEvent.class, idle -> {
+                    log.info("Streaming session became idle.");
+                    done.complete(null);
+                });
 
                 String messageId = copilotSession.send(
                         new MessageOptions().setPrompt(prompt)
                 ).get();
 
-                log.info("Message sent. ID: {}", messageId);
+                log.info("Message sent. ID={}", messageId);
 
                 done.get();
 
                 if (errorFuture.isDone()) {
-                    throw new ExecutionException(new RuntimeException(errorFuture.get()));
+                    String errorMessage = errorFuture.get();
+                    throw new CopilotServiceException(
+                            "Errore durante la sessione streaming verso Copilot",
+                            500,
+                            new RuntimeException(errorMessage)
+                    );
                 }
 
                 String response = responseBuilder.toString();
-                log.info("Received response: {}", response);
+
+                log.info("Streaming response completed. responseLength={}", response.length());
+
                 return response;
             }
+
+        } catch (ExecutionException e) {
+            Throwable cause = rootCause(e);
+
+            log.error("Copilot streaming request failed. model={}, promptLength={}, causeType={}, cause={}",
+                    model,
+                    prompt != null ? prompt.length() : 0,
+                    cause.getClass().getName(),
+                    cause.getMessage(),
+                    cause);
+
+            throw buildCopilotException("Errore durante la chiamata streaming a Copilot", cause);
         }
+    }
+
+    private void validateInput(String model, String prompt) {
+        if (model == null || model.isBlank()) {
+            throw new IllegalArgumentException("Il parametro 'model' è obbligatorio.");
+        }
+
+        if (prompt == null || prompt.isBlank()) {
+            throw new IllegalArgumentException("Il parametro 'prompt' è obbligatorio.");
+        }
+    }
+
+    private Throwable rootCause(Throwable ex) {
+        Throwable result = ex;
+
+        while (result.getCause() != null && result.getCause() != result) {
+            result = result.getCause();
+        }
+
+        return result;
+    }
+
+    private CopilotServiceException buildCopilotException(String defaultMessage, Throwable cause) {
+        String causeMessage = cause.getMessage() != null ? cause.getMessage() : "Errore sconosciuto";
+
+        if (cause instanceof TimeoutException) {
+            return new CopilotServiceException(
+                    "Timeout della richiesta verso Copilot",
+                    504,
+                    cause
+            );
+        }
+
+        if (causeMessage.contains("422")) {
+            return new CopilotServiceException(
+                    "Richiesta non valida verso Copilot: controlla model, prompt o payload",
+                    422,
+                    cause
+            );
+        }
+
+        if (causeMessage.contains("401")) {
+            return new CopilotServiceException(
+                    "Non autorizzato verso Copilot",
+                    401,
+                    cause
+            );
+        }
+
+        if (causeMessage.contains("403")) {
+            return new CopilotServiceException(
+                    "Accesso negato verso Copilot",
+                    403,
+                    cause
+            );
+        }
+
+        if (causeMessage.contains("404")) {
+            return new CopilotServiceException(
+                    "Risorsa Copilot non trovata",
+                    404,
+                    cause
+            );
+        }
+
+        if (causeMessage.contains("429")) {
+            return new CopilotServiceException(
+                    "Troppe richieste verso Copilot",
+                    429,
+                    cause
+            );
+        }
+
+        return new CopilotServiceException(defaultMessage + ": " + causeMessage, 500, cause);
     }
 
 }
