@@ -73,6 +73,8 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         log.info("BasePage Content\n" + basePageContent);
         String loginPageContent = buildLoginPage();
         log.info("LoginPage Content\n" + loginPageContent);
+        String driverFactoryContent = buildDriverFactory();
+        log.info("DriverFactory Content\n" + driverFactoryContent);
         String hooksContent = buildHooks();
         log.info("Hooks Content\n" + hooksContent);
         String testRunnerContent = buildRunCucumberTest();
@@ -87,6 +89,7 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             + pomContent + ","
             + basePageContent + ","
             + loginPageContent + ","
+            + driverFactoryContent + ","
             + hooksContent + ","
             + testRunnerContent + ","
             + loginStepsContent + ","
@@ -211,6 +214,41 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginPagePrompt);
 
         log.info("Risposta of the {} model to build the login page: {}", modelName, responseCopilString);
+        return validateAndCleanJson(responseCopilString);
+    }
+
+    private String buildDriverFactory() throws InterruptedException, ExecutionException{
+        log.info("Building DriverFactory class...");
+        String driverFactoryPrompt = """
+            Generate the file DriverFactory.java inside package driver.
+
+            Requirements:
+            - Create a class named DriverFactory
+            - Provide two static methods: createDriver and destroyDriver
+            - In createDriver:
+                - Initialize Chrome WebDriver using WebDriverManager
+                - Configure ChromeOptions with common capabilities (e.g. start-maximized, disable notifications)
+                - Return the WebDriver instance
+            - In destroyDriver:
+                - Properly quit the WebDriver instance if not null
+            - Ensure thread safety if possible (e.g. ThreadLocal WebDriver)
+
+            Respond only with a single valid JSON object.
+
+            Strict JSON requirements:
+            - Format:
+            {{
+                "path": "src/test/java/driver/DriverFactory.java",
+                "content": "<full file content with \\n and \\\" escape>"
+            }}
+            - Every newline as \\n, quotes as \\\".
+            - Single line JSON.
+            - No extra text or explanations.
+        """;
+
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, driverFactoryPrompt);
+
+        log.info("Risposta of the {} model to build the DriverFactory: {}", modelName, responseCopilString);
         return validateAndCleanJson(responseCopilString);
     }
 
