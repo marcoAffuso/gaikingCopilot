@@ -23,7 +23,30 @@ public class GenerateTAMavenSeleniumCucumberJunit {
     private final CopilotService copilotService;
 
     @Setter
-    private String gptLLM = "gpt-5.3-codex";
+    private String modelName = "gpt-5.3-codex";
+
+    @Setter
+    private String projectName = "automation-generated";
+
+    @Setter
+    private String javaVersion;
+    @Setter
+    private String seleniumVersion;
+    @Setter
+    private String junitVersion;
+    @Setter
+    private String junitPlatformVersion;
+    @Setter
+    private String cucumberVersion;
+    @Setter
+    private String webdrivermanagerVersion;
+    @Setter
+    private String surefireVersion;
+    @Setter
+    private String compilerPluginVersion;
+
+
+
 
 
     private String validateAndCleanJson(String response) {
@@ -70,7 +93,7 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             + loginFeatureContent
             + "] }";
         log.info("Generated Project JSON:\n" + projectJson);
-        fileWriterTool.writeProjectFiles("automation-generated", projectJson);
+        fileWriterTool.writeProjectFiles(projectName, projectJson);
    }
 
    private String buildPOM() throws InterruptedException, ExecutionException{
@@ -88,25 +111,51 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         - No extra text or explanations.
         """;
 
-        String userPrompt = """
-        Generate pom.xml for a Maven project (Java 25).
-        Dependencies:
-        - org.seleniumhq.selenium:selenium-java:4.35.0
-        - org.junit.jupiter:junit-jupiter:5.13.4
-        - org.junit.platform:junit-platform-suite-api:1.13.4
-        - io.cucumber:cucumber-java:7.27.2
-        - io.cucumber:cucumber-junit-platform-engine:7.27.2
-        - io.github.bonigarcia:webdrivermanager:6.2.0
-        Plugins:
-        - maven-surefire-plugin:3.2.5
-        - maven-compiler-plugin:3.13.0 with <release>25</release>
-        GroupId = it.nttdata
-        ArtifactId = automation-generated
-        """;
+        // String userPrompt = """
+        // Generate pom.xml for a Maven project (Java 25).
+        // Dependencies:
+        // - org.seleniumhq.selenium:selenium-java:4.35.0
+        // - org.junit.jupiter:junit-jupiter:5.13.4
+        // - org.junit.platform:junit-platform-suite-api:1.13.4
+        // - io.cucumber:cucumber-java:7.27.2
+        // - io.cucumber:cucumber-junit-platform-engine:7.27.2
+        // - io.github.bonigarcia:webdrivermanager:6.2.0
+        // Plugins:
+        // - maven-surefire-plugin:3.2.5
+        // - maven-compiler-plugin:3.13.0 with <release>25</release>
+        // GroupId = it.nttdata
+        // ArtifactId = automation-generated
+        // """;
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(gptLLM, systemPrompt + "\n" + userPrompt);
+        String userPrompt = String.format("""
+            Generate pom.xml for a Maven project (Java %1$s).
+            Dependencies:
+            - org.seleniumhq.selenium:selenium-java:%2$s
+            - org.junit.jupiter:junit-jupiter:%3$s
+            - org.junit.platform:junit-platform-suite-api:%4$s
+            - io.cucumber:cucumber-java:%5$s
+            - io.cucumber:cucumber-junit-platform-engine:%5$s
+            - io.github.bonigarcia:webdrivermanager:%6$s
+            Plugins:
+            - maven-surefire-plugin:%7$s
+            - maven-compiler-plugin:%8$s with <release>%1$s</release>
+            GroupId = it.nttdata
+            ArtifactId = %9$s
+            """,
+            javaVersion,
+            seleniumVersion,
+            junitVersion,
+            junitPlatformVersion,
+            cucumberVersion,
+            webdrivermanagerVersion,
+            surefireVersion,
+            compilerPluginVersion,
+            projectName
+        );
 
-        log.info("Risposta of the {} model to build the pom.xml: {}", gptLLM, responseCopilString);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, systemPrompt + "\n" + userPrompt);
+
+        log.info("Risposta of the {} model to build the pom.xml: {}", modelName, responseCopilString);
         return validateAndCleanJson(responseCopilString);
    }
 
@@ -133,9 +182,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - Single line JSON
             """;
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(gptLLM, basePagePrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, basePagePrompt);
 
-        log.info("Risposta of the {} model to build the base page: {}", gptLLM, responseCopilString);
+        log.info("Risposta of the {} model to build the base page: {}", modelName, responseCopilString);
         return validateAndCleanJson(responseCopilString);
     }
 
@@ -159,9 +208,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.            
         """;
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(gptLLM, loginPagePrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginPagePrompt);
 
-        log.info("Risposta of the {} model to build the login page: {}", gptLLM, responseCopilString);
+        log.info("Risposta of the {} model to build the login page: {}", modelName, responseCopilString);
         return validateAndCleanJson(responseCopilString);
     }
 
@@ -187,9 +236,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
           """;
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(gptLLM, hooksPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, hooksPrompt);
 
-        log.info("Risposta of the {} model to build the hooks: {}", gptLLM, responseAddGptOss);
+        log.info("Risposta of the {} model to build the hooks: {}", modelName, responseAddGptOss);
         return validateAndCleanJson(responseAddGptOss);
     }
 
@@ -223,9 +272,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - Single line JSON
         """;
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(gptLLM, testRunnerPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, testRunnerPrompt);
 
-        log.info("Risposta of the {} model to build the RunCucumberTest: {}", gptLLM, responseAddGptOss);
+        log.info("Risposta of the {} model to build the RunCucumberTest: {}", modelName, responseAddGptOss);
         return validateAndCleanJson(responseAddGptOss);
     }
 
@@ -247,9 +296,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             {{"path":"src/test/java/steps/LoginSteps.java","content":"<complete Java code with braces, newlines as \\n>"}}
         """;
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(gptLLM, loginStepsPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginStepsPrompt);
 
-        log.info("Risposta of the {} model to build the LoginSteps: {}", gptLLM, responseAddGptOss);
+        log.info("Risposta of the {} model to build the LoginSteps: {}", modelName, responseAddGptOss);
         return validateAndCleanJson(responseAddGptOss);
     }
 
@@ -278,9 +327,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - Output must be strictly valid JSON that can be parsed by com.fasterxml.jackson.databind.ObjectMapper.readTree().          
           """;
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(gptLLM, loginFeaturePrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginFeaturePrompt);
 
-        log.info("Risposta of the {} model to build the login.feature: {}", gptLLM, responseAddGptOss);
+        log.info("Risposta of the {} model to build the login.feature: {}", modelName, responseAddGptOss);
         return validateAndCleanJson(responseAddGptOss);
     }
 
