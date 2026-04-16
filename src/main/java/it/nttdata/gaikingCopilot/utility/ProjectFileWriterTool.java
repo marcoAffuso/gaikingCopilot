@@ -20,7 +20,6 @@ public class ProjectFileWriterTool {
 
     private final ReadAndWriteJson readAndWriteJson;
     private final XmlMinifyService xmlMinifyService;
-    private final JavaFormatter javaFormatter;
 
     /**
      * Scrive i file del progetto nella cartella base indicata.
@@ -57,11 +56,6 @@ public class ProjectFileWriterTool {
                 if(filePath.contains(".xml")) {
                     log.info("Rilevato file XML, procedo a minificarlo.");
                     content = xmlMinifyService.prettyPrintXml(content, 2);
-                }
-
-                if(filePath.endsWith(".java")) {
-                    log.info("Rilevato file JAVA, procedo a formattarlo.");
-                    content = this.javaFormatter.prettyFormat(content);
                 }
 
                 // Sostituisci \\n con newline reali
