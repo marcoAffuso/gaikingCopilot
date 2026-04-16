@@ -18,6 +18,7 @@ import com.github.copilot.sdk.json.ModelInfo;
 import com.github.copilot.sdk.json.PermissionHandler;
 import com.github.copilot.sdk.json.SessionConfig;
 
+import it.nttdata.gaikingCopilot.exception.CustomException;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -156,7 +157,7 @@ public class CopilotService {
 
                 if (errorFuture.isDone()) {
                     String errorMessage = errorFuture.get();
-                    throw new CopilotServiceException(
+                    throw new CustomException(
                             "Errore durante la sessione streaming verso Copilot",
                             500,
                             new RuntimeException(errorMessage)
@@ -204,11 +205,11 @@ public class CopilotService {
         return result;
     }
 
-    private CopilotServiceException buildCopilotException(String defaultMessage, Throwable cause) {
+    private CustomException buildCopilotException(String defaultMessage, Throwable cause) {
         String causeMessage = cause.getMessage() != null ? cause.getMessage() : "Errore sconosciuto";
 
         if (cause instanceof TimeoutException) {
-            return new CopilotServiceException(
+            return new CustomException(
                     "Timeout della richiesta verso Copilot",
                     504,
                     cause
@@ -216,7 +217,7 @@ public class CopilotService {
         }
 
         if (causeMessage.contains("422")) {
-            return new CopilotServiceException(
+            return new CustomException(
                     "Richiesta non valida verso Copilot: controlla model, prompt o payload",
                     422,
                     cause
@@ -224,7 +225,7 @@ public class CopilotService {
         }
 
         if (causeMessage.contains("401")) {
-            return new CopilotServiceException(
+            return new CustomException(
                     "Non autorizzato verso Copilot",
                     401,
                     cause
@@ -232,7 +233,7 @@ public class CopilotService {
         }
 
         if (causeMessage.contains("403")) {
-            return new CopilotServiceException(
+            return new CustomException(
                     "Accesso negato verso Copilot",
                     403,
                     cause
@@ -240,7 +241,7 @@ public class CopilotService {
         }
 
         if (causeMessage.contains("404")) {
-            return new CopilotServiceException(
+            return new CustomException(
                     "Risorsa Copilot non trovata",
                     404,
                     cause
@@ -248,14 +249,14 @@ public class CopilotService {
         }
 
         if (causeMessage.contains("429")) {
-            return new CopilotServiceException(
+            return new CustomException(
                     "Troppe richieste verso Copilot",
                     429,
                     cause
             );
         }
 
-        return new CopilotServiceException(defaultMessage + ": " + causeMessage, 500, cause);
+        return new CustomException(defaultMessage + ": " + causeMessage, 500, cause);
     }
 
 }

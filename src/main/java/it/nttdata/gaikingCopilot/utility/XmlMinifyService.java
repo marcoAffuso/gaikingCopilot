@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
+import it.nttdata.gaikingCopilot.exception.CustomException;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -53,7 +54,7 @@ public class XmlMinifyService {
             return compact;
         } catch (Exception e) {
             log.error("Errore durante la minificazione dell'XML: " + e.getMessage());
-            throw new RuntimeException("Errore durante la scrittura del pom nel db Cassandra", e);
+            throw new CustomException("Errore durante la scrittura del pom nel db Cassandra", 422, e);
             
             
         }
@@ -61,8 +62,6 @@ public class XmlMinifyService {
 
     public String prettyPrintXml(String xmlString, int indentAmount){
             TransformerFactory tf = TransformerFactory.newInstance();
-            // Se vuoi assicurarti di usare Xalan, potresti dover specificare la factory.
-            // tf.setAttribute("http://xml.apache.org/xalan/properties/indent-amount", indentAmount);
             try {
                 Transformer transformer = tf.newTransformer();
                 transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
@@ -76,7 +75,7 @@ public class XmlMinifyService {
                 return writer.toString();
             } catch (TransformerException e) {
                 log.error("Errore durante la ri-formattazione del pom : {}" , e.getMessage());
-                throw new RuntimeException("Errore durante la ri-formattazione del pom", e);
+                throw new CustomException("Errore durante la ri-formattazione del pom", 422, e);
             }
             
     }

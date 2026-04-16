@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import it.nttdata.gaikingCopilot.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -53,7 +54,7 @@ public class ProjectFileWriterTool {
                     }
                 }
 
-                if(filePath.contains(".xml")) {
+                if(filePath.endsWith(".xml")) {
                     log.info("Rilevato file XML, procedo a minificarlo.");
                     content = xmlMinifyService.prettyPrintXml(content, 2);
                 }
@@ -66,7 +67,7 @@ public class ProjectFileWriterTool {
             }
         } catch (IOException e) {
             log.error("Errore durante la scrittura dei file del progetto", e);
-            throw new RuntimeException("Errore durante la scrittura dei file del progetto", e);
+            throw new CustomException("Errore durante la scrittura dei file del progetto", 422, e);
         }
     }
 

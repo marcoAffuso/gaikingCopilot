@@ -8,17 +8,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import it.nttdata.gaikingCopilot.copilot.CopilotServiceException;
+
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(CopilotServiceException.class)
-    public ResponseEntity<Map<String, Object>> handleCopilotServiceException(CopilotServiceException ex) {
+    private static final String STATUS = "status";
+    private static final String ERROR = "error";
+    private static final String CAUSE = "cause";
+
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<Map<String, Object>> handleCustomException(CustomException ex) {
         Map<String, Object> body = new HashMap<>();
-        body.put("status", ex.getStatusCode());
-        body.put("error", ex.getMessage());
-        body.put("cause", ex.getCause() != null ? ex.getCause().getMessage() : null);
+        body.put(STATUS, ex.getStatusCode());
+        body.put(ERROR, ex.getMessage());
+        body.put(CAUSE, ex.getCause() != null ? ex.getCause().getMessage() : null);
 
         return ResponseEntity.status(ex.getStatusCode()).body(body);
     }
@@ -26,8 +30,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
         Map<String, Object> body = new HashMap<>();
-        body.put("status", 400);
-        body.put("error", ex.getMessage());
+        body.put(STATUS, 400);
+        body.put(ERROR, ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
@@ -35,9 +39,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
         Map<String, Object> body = new HashMap<>();
-        body.put("status", 500);
-        body.put("error", "Errore interno del server");
-        body.put("cause", ex.getMessage());
+        body.put(STATUS, 500);
+        body.put(ERROR, "Errore interno del server");
+        body.put(CAUSE, ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
