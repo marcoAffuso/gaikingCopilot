@@ -192,6 +192,8 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         log.info("BasePage Content\n" + basePageContent);
         String loginPageContent = buildLoginPage();
         log.info("LoginPage Content\n" + loginPageContent);
+        String pageObjectManagerContent = buildPageObjectManager();
+        log.info("PageObjectManager Content\n" + pageObjectManagerContent);
         String driverFactoryContent = buildDriverFactory();
         log.info("DriverFactory Content\n" + driverFactoryContent);
         String hooksContent = buildHooks();
@@ -200,6 +202,8 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         log.info("HooksInterface Content\n" + hooksInterfaceContent);
         String testRunnerContent = buildRunCucumberTest();
         log.info("TestRunner Content\n" + testRunnerContent);
+        String testContextContent = buildTestContext();
+        log.info("TestContext Content\n" + testContextContent);
         String loginStepsContent = buildLoginSteps();
         log.info("LoginSteps Content\n" + loginStepsContent);
         String loginFeatureContent = buildLoginFeature();
@@ -210,10 +214,12 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             + pomContent + ","
             + basePageContent + ","
             + loginPageContent + ","
+            + pageObjectManagerContent + ","
             + driverFactoryContent + ","
             + hooksContent + ","
             + hooksInterfaceContent + ","
             + testRunnerContent + ","
+            + testContextContent + ","
             + loginStepsContent + ","
             + loginFeatureContent
             + "] }";
@@ -413,6 +419,112 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         return validateAndCleanJson(responseCopilString, loginPagePrompt);
     }
 
+    private String buildPageObjectManager() throws InterruptedException, ExecutionException{
+        log.info("Building PageObjectManager class...");
+
+        String[] partsOfGroupId = groupId.split("\\.");
+
+        String pageObjectManagerPrompt = String.format("""
+            Generate the file PageObjectManager.java inside package %1$s.%2$s.pages.
+
+            Goal:
+            - Generate exactly one Java class named PageObjectManager
+            - The generated class must match the required structure precisely
+            - The generated code must be complete, valid, and compilable Java
+
+            Package and target:
+            - Package: %1$s.%2$s.pages
+            - The only file to generate is PageObjectManager.java in package %1$s.%2$s.pages
+
+            Required imports:
+            - org.openqa.selenium.WebDriver
+
+            Forbidden imports:
+            - %1$s.%2$s.hooks.Hooks
+            - %1$s.%2$s.hooks.HooksInterface
+            - %1$s.%2$s.driver.DriverFactory
+            - org.openqa.selenium.By
+            - org.openqa.selenium.support.ui.ExpectedConditions
+
+            Class structure rules:
+            - Create exactly one public class named PageObjectManager
+            - Declare exactly these two fields:
+            - private final WebDriver webDriver;
+            - private LoginPage loginPage;
+            - Do not declare any other fields
+
+            Constructor rules:
+            - Add exactly one constructor
+            - Constructor signature must be exactly:
+            public PageObjectManager(WebDriver webDriver)
+            - In the constructor:
+            - assign the received webDriver to this.webDriver;
+            - Do not add any other constructor
+
+            Required methods:
+            - Add exactly one public method besides the constructor
+            - Method signature must be exactly:
+            public LoginPage getLoginPage()
+            - In getLoginPage():
+            - if loginPage is null, initialize it with new LoginPage(webDriver);
+            - return loginPage;
+            - Do not add any other methods
+            - Do not add getters for webDriver
+            - Do not add setters
+
+            Behavioral constraints:
+            - The class must reuse the same WebDriver instance received in the constructor
+            - The class must create LoginPage only through getLoginPage()
+            - The class must reuse the same LoginPage instance once created
+            - The class must not manage WebDriver lifecycle
+            - The class must not create or destroy drivers
+            - The class must not instantiate DriverFactory
+            - Keep the implementation simple and focused on page object creation and reuse
+
+            Exactness constraints:
+            - Do not add extra fields
+            - Do not add helper methods
+            - Do not add comments
+            - Do not add annotations
+            - Do not add Lombok annotations
+            - Do not add unused imports
+            - Do not add example code outside the class
+
+            The generated class must follow this exact shape:
+            - public class PageObjectManager
+            - two fields:
+            - webDriver
+            - loginPage
+            - one constructor:
+            - PageObjectManager(WebDriver webDriver)
+            - one method:
+            - getLoginPage
+
+            Respond only with a single valid JSON object.
+
+            Strict JSON requirements:
+            - Return exactly one JSON object
+            - Return the JSON on a single line
+            - Do not add markdown fences
+            - Do not add explanations
+            - Do not add comments
+            - Use this exact format:
+            {
+                "path": "src/main/java/%1$s/%2$s/pages/PageObjectManager.java",
+                "content": "<full Java file content with \\n for newlines and \\\" for quotes>"
+            }
+            - The value of "content" must contain only the complete Java source code
+            - Every newline in "content" must be escaped as \\n
+            - Every internal double quote in "content" must be escaped as \\\"
+            - The output must be parseable by Jackson ObjectMapper.readTree()
+        """, partsOfGroupId[0], partsOfGroupId[1]);
+
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, pageObjectManagerPrompt);
+
+        log.info("Risposta of the {} model to build the PageObjectManager: {}", modelName, responseCopilString);
+        return validateAndCleanJson(responseCopilString, pageObjectManagerPrompt);
+    }
+
     private String buildDriverFactory() throws InterruptedException, ExecutionException{
         log.info("Building DriverFactory class...");
 
@@ -478,6 +590,54 @@ public class GenerateTAMavenSeleniumCucumberJunit {
 
         String [] partsOfGroupId = groupId.split("\\.");
 
+        // String hooksPrompt = String.format("""
+        //     Generate the file Hooks.java inside package %1$s.%2$s.hooks.
+
+        //     Requirements:
+        //     - Create a class named Hooks inside package %1$s.%2$s.hooks
+        //     - The class must implement HooksInterface
+        //     - Import %1$s.%2$s.driver.DriverFactory
+        //     - Import io.cucumber.java.Before
+        //     - Import io.cucumber.java.After
+        //     - Import org.openqa.selenium.WebDriver
+        //     - Declare a private field named driverFactory of type DriverFactory
+        //     - Declare a private field named driver of type WebDriver
+        //     - Implement the method:
+        //     public WebDriver getDriver()
+        //     which must return the field driver
+        //     - Add a method annotated with @Before named beforeScenario
+        //     - In beforeScenario:
+        //         - Instantiate DriverFactory with new DriverFactory()
+        //         - Assign it to the field driverFactory
+        //         - Initialize the field driver by calling driverFactory.createDriver()
+        //     - Add a method annotated with @After named afterScenario
+        //     - In afterScenario:
+        //         - Call driverFactory.destroyDriver()
+        //         - Set driver to null
+        //     - Do not use static fields
+        //     - Do not use static methods
+        //     - Do not create ChromeDriver directly in this class
+        //     - Do not use WebDriverManager directly in this class
+        //     - Do not configure ChromeOptions in this class
+        //     - The class must be complete, valid, and compilable Java
+        //     - Match this structure exactly:
+        //         - class Hooks implements HooksInterface
+        //         - fields: driverFactory, driver
+        //         - methods: getDriver, beforeScenario, afterScenario
+
+        //     Respond only with a single valid JSON object.
+
+        //     Strict JSON requirements:
+        //     - Format:
+        //     {
+        //         "path": "src/test/java/%1$s/%2$s/hooks/Hooks.java",
+        //         "content": "<full file content with \\n and \\\" escape>"
+        //     }
+        //     - Every newline as \\n, quotes as \\\".
+        //     - Single line JSON.
+        //     - No extra text or explanations.
+        // """, partsOfGroupId[0], partsOfGroupId[1]);
+
         String hooksPrompt = String.format("""
             Generate the file Hooks.java inside package %1$s.%2$s.hooks.
 
@@ -490,9 +650,11 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - Import org.openqa.selenium.WebDriver
             - Declare a private field named driverFactory of type DriverFactory
             - Declare a private field named driver of type WebDriver
-            - Implement the method:
+            - Implement the method getDriver() declared in HooksInterface
+            - Add the annotation @Override immediately above the getDriver() method
+            - Implement the method exactly with this signature:
             public WebDriver getDriver()
-            which must return the field driver
+            - The getDriver() method must return the field driver
             - Add a method annotated with @Before named beforeScenario
             - In beforeScenario:
                 - Instantiate DriverFactory with new DriverFactory()
@@ -512,6 +674,7 @@ public class GenerateTAMavenSeleniumCucumberJunit {
                 - class Hooks implements HooksInterface
                 - fields: driverFactory, driver
                 - methods: getDriver, beforeScenario, afterScenario
+                - getDriver must be annotated with @Override
 
             Respond only with a single valid JSON object.
 
@@ -607,6 +770,115 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         return validateAndCleanJson(responseAddGptOss, testRunnerPrompt);
     }
 
+    private String buildTestContext() throws InterruptedException, ExecutionException{
+        log.info("Building TestContext class...");
+        String [] partsOfGroupId = groupId.split("\\.");
+
+        String testContextPrompt = String.format("""
+            Generate the file TestContext.java inside package %1$s.%2$s.utility.
+
+            Goal:
+            - Generate exactly one Java class named TestContext
+            - The generated class must match the required structure precisely
+            - The generated code must be complete, valid, and compilable Java
+
+            Package and file path:
+            - Package: %1$s.%2$s.utility
+
+            Required imports:
+            - org.openqa.selenium.WebDriver
+            - %1$s.%2$s.hooks.HooksInterface
+            - %1$s.%2$s.pages.PageObjectManager
+
+            Forbidden imports:
+            - %1$s.%2$s.hooks.Hooks
+            - %1$s.%2$s.driver.DriverFactory
+            - %1$s.%2$s.pages.LoginPage
+
+            Class structure rules:
+            - Create exactly one public class named TestContext
+            - Declare exactly these three fields:
+            - private WebDriver driver;
+            - private HooksInterface hooks;
+            - private PageObjectManager pageObjectManager;
+            - Do not declare any other fields
+
+            Constructor rules:
+            - Add exactly one constructor
+            - Constructor signature must be exactly:
+            public TestContext(HooksInterface hooks)
+            - In the constructor:
+            - assign the received hooks to this.hooks;
+            - initialize this.driver with hooks.getDriver();
+            - Do not add any other constructor
+
+            Required methods:
+            - Add exactly one public method besides the constructor
+            - Method signature must be exactly:
+            public PageObjectManager getPageObjectManager()
+            - In getPageObjectManager():
+            - if this.pageObjectManager is null, initialize it with new PageObjectManager(this.driver);
+            - return this.pageObjectManager;
+            - Do not add any other methods
+            - Do not add getters for driver
+            - Do not add getters for hooks
+            - Do not add setters
+
+            Behavioral constraints:
+            - The class must reuse the WebDriver obtained from HooksInterface
+            - The class must create PageObjectManager only through getPageObjectManager()
+            - The class must reuse the same PageObjectManager instance once created
+            - The class must not manage WebDriver lifecycle
+            - The class must not create or destroy drivers
+            - The class must not instantiate DriverFactory
+            - Keep the implementation simple and focused on shared test context management
+
+            Exactness constraints:
+            - Do not add extra fields
+            - Do not add helper methods
+            - Do not add comments
+            - Do not add annotations
+            - Do not add Lombok annotations
+            - Do not add unused imports
+            - Do not instantiate LoginPage directly
+            - Do not add example code outside the class
+
+            The generated class must follow this exact shape:
+            - public class TestContext
+            - three fields:
+            - driver
+            - hooks
+            - pageObjectManager
+            - one constructor:
+            - TestContext(HooksInterface hooks)
+            - one method:
+            - getPageObjectManager
+
+            Respond only with a single valid JSON object.
+
+            Strict JSON requirements:
+            - Return exactly one JSON object
+            - Return the JSON on a single line
+            - Do not add markdown fences
+            - Do not add explanations
+            - Do not add comments
+            - Use this exact format:
+            {
+                "path": "src/test/java/%1$s/%2$s/utility/TestContext.java",
+                "content": "<full Java file content with \\n for newlines and \\\" for quotes>"
+            }
+            - The value of "content" must contain only the complete Java source code
+            - Every newline in "content" must be escaped as \\n
+            - Every internal double quote in "content" must be escaped as \\\"
+            - The output must be parseable by Jackson ObjectMapper.readTree()
+        """, partsOfGroupId[0], partsOfGroupId[1]);
+
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, testContextPrompt);
+
+        log.info("Risposta of the {} model to build the TestContext: {}", modelName, responseAddGptOss);
+        return validateAndCleanJson(responseAddGptOss, testContextPrompt);
+    }
+
     private String buildLoginSteps() throws InterruptedException, ExecutionException{
         log.info("Building LoginSteps class...");
 
@@ -615,78 +887,129 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         String loginStepsPrompt = String.format("""
             Generate the file LoginSteps.java inside package %1$s.%2$s.steps.
 
-            Requirements:
+            Goal:
+            - Generate exactly one Java class named LoginSteps
+            - The generated class must match the required structure precisely
+            - The generated code must be complete, valid, and compilable Java
+
+            Package and file path:
             - Package: %1$s.%2$s.steps
-            - Create a class named LoginSteps
-            - Import io.cucumber.java.en.Given
-            - Import io.cucumber.java.en.When
-            - Import io.cucumber.java.en.And
-            - Import io.cucumber.java.en.Then
-            - Import %1$s.%2$s.pages.LoginPage
-            - Import %1$s.%2$s.hooks.Hooks
-            - Import %1$s.%2$s.hooks.HooksInterface
-            - Import static org.junit.jupiter.api.Assertions.assertTrue
-            - Declare a private final field named hooks of type HooksInterface
-            - Declare a private field named loginPage of type LoginPage
-            - Add a constructor that receives a Hooks object
+
+            Required imports:
+            - io.cucumber.java.en.Given
+            - io.cucumber.java.en.When
+            - io.cucumber.java.en.And
+            - io.cucumber.java.en.Then
+            - %1$s.%2$s.pages.LoginPage
+            - %1$s.%2$s.utility.TestContext
+            - static org.junit.jupiter.api.Assertions.assertTrue
+
+            Forbidden imports:
+            - %1$s.%2$s.hooks.Hooks
+            - %1$s.%2$s.hooks.HooksInterface
+            - any DriverFactory import
+            - any WebDriver import
+
+            Class structure rules:
+            - Create exactly one public class named LoginSteps
+            - Declare exactly one field:
+            private LoginPage loginPage;
+            - Do not declare any other fields
+            - Do not declare a hooks field
+            - Do not declare a driver field
+            - Do not declare a testContext field
+
+            Constructor rules:
+            - Add exactly one constructor
+            - Constructor signature must be exactly:
+            public LoginSteps(TestContext testContext)
             - In the constructor:
-                - Assign the received Hooks instance to the field hooks
-            - Do NOT call Hooks.getDriver() as a static method
-            - Do NOT create a new DriverFactory in this class
-            - Do NOT manage WebDriver lifecycle in this class
-            - This class must use the driver only through hooks.getDriver()
+            - initialize loginPage with testContext.getPageObjectManager().getLoginPage();
+            - Do not add any other constructor
+            - Do not instantiate LoginPage directly with new LoginPage(...)
+            - Do not use Hooks or HooksInterface in the constructor
 
-            Cucumber step methods:
-            - Add a method annotated with @Given("I open the login page {string}")
-            - Method signature: openLoginPage(String url)
-            - In openLoginPage:
-                - Create loginPage with new LoginPage(hooks.getDriver())
-                - Call loginPage.open(url)
-                - Call loginPage.get() to verify that the page is loaded
+            Required step methods:
+            - Add exactly these five public methods and no others
 
-            - Add a method annotated with @When("I enter username {string}")
-            - Method signature: enterUsername(String username)
-            - In enterUsername:
-                - Call loginPage.enterUsername(username)
+            - Method 1:
+            - Annotation: @Given("I open the login page {string}")
+            - Signature: public void openLoginPage(String url)
+            - Body:
+                - call loginPage.open(url);
+                - call loginPage.get();
 
-            - Add a method annotated with @And("I enter password {string}")
-            - Method signature: enterPassword(String password)
-            - In enterPassword:
-                - Call loginPage.enterPassword(password)
+            - Method 2:
+            - Annotation: @When("I enter username {string}")
+            - Signature: public void enterUsername(String username)
+            - Body:
+                - call loginPage.enterUsername(username);
 
-            - Add a method annotated with @And("I click the login button")
-            - Method signature: clickLoginButton()
-            - In clickLoginButton:
-                - Call loginPage.submit()
+            - Method 3:
+            - Annotation: @And("I enter password {string}")
+            - Signature: public void enterPassword(String password)
+            - Body:
+                - call loginPage.enterPassword(password);
 
-            - Add a method annotated with @Then("I verify an error message containing {string}")
-            - Method signature: verifyErrorMessage(String expected)
-            - In verifyErrorMessage:
-                - Use assertTrue(loginPage.getErrorMessage().contains(expected))
+            - Method 4:
+            - Annotation: @And("I click the login button")
+            - Signature: public void clickLoginButton()
+            - Body:
+                - call loginPage.submit();
 
-            Design constraints:
-            - Keep step definitions thin and delegate page behavior to LoginPage
-            - Reuse Hooks only as a driver provider
-            - Keep the class focused on step orchestration and assertions
-            - The code must be complete, valid, and compilable Java
-            - The generated code must be compatible with Hooks implementing HooksInterface
-            - Match this structure exactly:
-                - class LoginSteps
-                - fields: hooks, loginPage
-                - constructor: LoginSteps(Hooks hooks)
-                - methods: openLoginPage, enterUsername, enterPassword, clickLoginButton, verifyErrorMessage
+            - Method 5:
+            - Annotation: @Then("I verify an error message containing {string}")
+            - Signature: public void verifyErrorMessage(String expected)
+            - Body:
+                - use assertTrue(loginPage.getErrorMessage().contains(expected));
+
+            Behavioral constraints:
+            - The class must obtain LoginPage only through TestContext and PageObjectManager
+            - The class must not manage WebDriver lifecycle
+            - The class must not create or destroy drivers
+            - The class must not create DriverFactory
+            - The class must not use Hooks directly
+            - Keep step definitions thin and delegate behavior to LoginPage
+            - Keep the class focused only on step orchestration and assertion
+
+            Exactness constraints:
+            - Do not add extra methods
+            - Do not add helper methods
+            - Do not add comments
+            - Do not add annotations other than the five Cucumber step annotations
+            - Do not add Lombok annotations
+            - Do not add unused imports
+            - Do not add blank placeholder methods
+            - Do not add example code outside the class
+
+            The generated class must follow this exact shape:
+            - public class LoginSteps
+            - one field: loginPage
+            - one constructor: LoginSteps(TestContext testContext)
+            - five methods:
+            - openLoginPage
+            - enterUsername
+            - enterPassword
+            - clickLoginButton
+            - verifyErrorMessage
 
             Respond only with a single valid JSON object.
 
             Strict JSON requirements:
-            - Format:
+            - Return exactly one JSON object
+            - Return the JSON on a single line
+            - Do not add markdown fences
+            - Do not add explanations
+            - Do not add comments
+            - Use this exact format:
             {
                 "path": "src/test/java/%1$s/%2$s/steps/LoginSteps.java",
-                "content": "<full file content with \\n and \\\" escape>"
+                "content": "<full Java file content with \\n for newlines and \\\" for quotes>"
             }
-            - Every newline as \\n, quotes as \\\".
-            - Single line JSON.
-            - No extra text or explanations.
+            - The value of "content" must contain only the complete Java source code
+            - Every newline in "content" must be escaped as \\n
+            - Every internal double quote in "content" must be escaped as \\\"
+            - The output must be parseable by Jackson ObjectMapper.readTree()
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
         String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginStepsPrompt);
