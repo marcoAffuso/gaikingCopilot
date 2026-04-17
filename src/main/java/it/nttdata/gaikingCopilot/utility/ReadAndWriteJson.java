@@ -121,6 +121,15 @@ public class ReadAndWriteJson {
         }
     }
 
+    public String getJsonValidationError(String json) {
+        try {
+            objectMapper.readTree(json);
+            return null;
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+    }
+
     public String normalizeJsonEscapes(String json) {
 
         try {

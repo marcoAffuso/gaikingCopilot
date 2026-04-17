@@ -29,6 +29,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
     private String projectName = "automation-generated";
 
     @Setter
+    private String groupId = "it.nttdata";
+
+    @Setter
     private String javaVersion;
     @Setter
     private String seleniumVersion;
@@ -45,24 +48,140 @@ public class GenerateTAMavenSeleniumCucumberJunit {
     @Setter
     private String compilerPluginVersion;
 
+    private static final int MAX_JSON_REPAIR_RETRIES = 1;
 
+    private String validateAndCleanJson(String response, String originalPrompt)
+            throws InterruptedException, ExecutionException {
 
+        log.info("Raw LLM output:\n{}", response);
 
-
-    private String validateAndCleanJson(String response) {
-        log.info("Raw LLM output:\n" + response);
-        boolean isJson = this.readAndWriteJson.isValidJson(response);
-        log.info("Is valid JSON? " + isJson);
-        if (!isJson) {
-            log.warn("Invalid JSON detected, attempting to clean...");
-            String responseCleaned = this.readAndWriteJson.normalizeJsonEscapes(response);
-            isJson = this.readAndWriteJson.isValidJson(responseCleaned);
-            log.info("After normalization, is valid JSON? " + isJson);
-            return responseCleaned;
-        }else {
-            return response;
+        String candidate = sanitizeJsonCandidate(response);
+        if (this.readAndWriteJson.isValidJson(candidate)) {
+            log.info("Response is valid JSON after initial sanitization.");
+            return candidate;
         }
-    } 
+
+        String parserError = this.readAndWriteJson.getJsonValidationError(candidate);
+        log.warn("Invalid JSON detected. Parser error: {}", parserError);
+
+        String cleanedCandidate = tryLocalJsonRepairs(candidate);
+        if (this.readAndWriteJson.isValidJson(cleanedCandidate)) {
+            log.info("Local cleanup produced valid JSON.");
+            return cleanedCandidate;
+        }
+
+        String cleanedParserError = this.readAndWriteJson.getJsonValidationError(cleanedCandidate);
+        log.warn("JSON still invalid after local cleanup. Parser error: {}", cleanedParserError);
+
+        if (originalPrompt == null || originalPrompt.isBlank()) {
+            throw new IllegalStateException(
+                    "Invalid JSON and no original prompt available for retry. Parser error: "
+                            + cleanedParserError
+                            + "\nLast payload:\n"
+                            + cleanedCandidate
+            );
+        }
+
+        String latestCandidate = cleanedCandidate;
+        String latestParserError = cleanedParserError;
+
+        for (int attempt = 1; attempt <= MAX_JSON_REPAIR_RETRIES; attempt++) {
+            log.warn(
+                    "JSON still invalid. Requesting controlled repair from model, attempt {}/{}. Parser error: {}",
+                    attempt,
+                    MAX_JSON_REPAIR_RETRIES,
+                    latestParserError
+            );
+
+            String repairPrompt = buildJsonRepairPrompt(originalPrompt, latestCandidate, latestParserError);
+            String retriedResponse = copilotService.getResponseCopilotWhitOutStreaming(modelName, repairPrompt);
+
+            log.info("Repair attempt {} raw output:\n{}", attempt, retriedResponse);
+
+            latestCandidate = sanitizeJsonCandidate(retriedResponse);
+            if (this.readAndWriteJson.isValidJson(latestCandidate)) {
+                log.info("Repair attempt {} produced valid JSON.", attempt);
+                return latestCandidate;
+            }
+
+            latestParserError = this.readAndWriteJson.getJsonValidationError(latestCandidate);
+            log.warn("Repair attempt {} still invalid before local cleanup. Parser error: {}", attempt, latestParserError);
+
+            latestCandidate = tryLocalJsonRepairs(latestCandidate);
+            if (this.readAndWriteJson.isValidJson(latestCandidate)) {
+                log.info("Repair attempt {} produced valid JSON after local cleanup.", attempt);
+                return latestCandidate;
+            }
+
+            latestParserError = this.readAndWriteJson.getJsonValidationError(latestCandidate);
+            log.warn("Repair attempt {} still invalid after local cleanup. Parser error: {}", attempt, latestParserError);
+        }
+
+        throw new IllegalStateException(
+                "Unable to obtain valid JSON after local cleanup and retry. Parser error: "
+                        + latestParserError
+                        + "\nLast payload:\n"
+                        + latestCandidate
+        );
+    }
+
+    private String sanitizeJsonCandidate(String raw) {
+        if (raw == null) {
+            return "";
+        }
+
+        String cleaned = this.readAndWriteJson.cleanJson(raw).trim();
+        return unwrapOuterDoubleBraces(cleaned);
+    }
+
+    private String unwrapOuterDoubleBraces(String value) {
+        if (value.startsWith("{{") && value.endsWith("}}") && value.length() >= 4) {
+            log.warn("Detected outer double braces. Converting '{{...}}' to '{...}'.");
+            return value.substring(1, value.length() - 1).trim();
+        }
+
+        return value;
+    }
+
+    private String tryLocalJsonRepairs(String raw) {
+        String candidate = raw;
+
+        try {
+            candidate = this.readAndWriteJson.normalizeJsonEscapes(candidate);
+        } catch (Exception ex) {
+            log.warn("normalizeJsonEscapes failed: {}", ex.getMessage());
+        }
+
+        return sanitizeJsonCandidate(candidate);
+    }
+
+    private String buildJsonRepairPrompt(String originalPrompt, String invalidJsonResponse, String parserError) {
+        return """
+            The previous answer for the prompt below is not valid JSON.
+
+            Repair it and return ONLY one valid JSON object on a single line.
+
+            Parser error:
+            """ + parserError + """
+
+            Rules:
+            - Return only one valid JSON object
+            - Do not add explanations
+            - Do not add markdown fences
+            - Do not add comments
+            - Do not wrap the whole JSON with double outer braces like {{...}}
+            - Use standard JSON with one outer object: {...}
+            - Preserve the intended path and content from the invalid response
+            - Escape all internal newlines as \\n
+            - Escape all internal double quotes as \\"
+            - The output must be parseable by Jackson ObjectMapper.readTree()
+
+            Original generation prompt:
+            """ + originalPrompt + """
+
+            Invalid response to repair:
+            """ + invalidJsonResponse;
+    }
 
 
    public void generateAutomationJavaSeleniumCucumberProject() throws InterruptedException, ExecutionException {
@@ -77,6 +196,8 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         log.info("DriverFactory Content\n" + driverFactoryContent);
         String hooksContent = buildHooks();
         log.info("Hooks Content\n" + hooksContent);
+        String hooksInterfaceContent = buildHooksInterface();
+        log.info("HooksInterface Content\n" + hooksInterfaceContent);
         String testRunnerContent = buildRunCucumberTest();
         log.info("TestRunner Content\n" + testRunnerContent);
         String loginStepsContent = buildLoginSteps();
@@ -91,6 +212,7 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             + loginPageContent + ","
             + driverFactoryContent + ","
             + hooksContent + ","
+            + hooksInterfaceContent + ","
             + testRunnerContent + ","
             + loginStepsContent + ","
             + loginFeatureContent
@@ -100,50 +222,64 @@ public class GenerateTAMavenSeleniumCucumberJunit {
    }
 
    private String buildPOM() throws InterruptedException, ExecutionException{
-        log.info("Building POM file...");           
-        
-        String systemPrompt = """
-        Generate pom.xml for a Maven project.
-        Rules:
-        - Respond only with one single valid JSON object.
-        - JSON format:
-        {{"path":"pom.xml","content":"<full pom.xml (XML) with \\n for newlines and \\\" for quotes>"}}
-        - The value of "content" must be only valid XML, not JSON.
-        - Every newline as \\n, quotes as \\\".
-        - Single line JSON.
-        - No extra text or explanations.
-        """;
+        log.info("Building POM file...");
 
-        // String userPrompt = """
-        // Generate pom.xml for a Maven project (Java 25).
-        // Dependencies:
-        // - org.seleniumhq.selenium:selenium-java:4.35.0
-        // - org.junit.jupiter:junit-jupiter:5.13.4
-        // - org.junit.platform:junit-platform-suite-api:1.13.4
-        // - io.cucumber:cucumber-java:7.27.2
-        // - io.cucumber:cucumber-junit-platform-engine:7.27.2
-        // - io.github.bonigarcia:webdrivermanager:6.2.0
-        // Plugins:
-        // - maven-surefire-plugin:3.2.5
-        // - maven-compiler-plugin:3.13.0 with <release>25</release>
-        // GroupId = it.nttdata
-        // ArtifactId = automation-generated
-        // """;
+        String systemPrompt = """
+            Generate pom.xml for a Maven project.
+            Rules:
+            - Respond only with one single valid JSON object.
+            - JSON format:
+            {"path":"pom.xml","content":"<full pom.xml (XML) with \\n for newlines and \\\" for quotes>"}
+            - The value of "content" must be only valid XML, not JSON.
+            - Every newline as \\n, quotes as \\\".
+            - Single line JSON.
+            - No extra text or explanations.
+            """;
 
         String userPrompt = String.format("""
             Generate pom.xml for a Maven project (Java %1$s).
+
+            Project structure requirements:
+            - Classes pages.BasePage and pages.LoginPage are under src/main/java
+            - Therefore Selenium classes used by src/main/java must be available in main compile scope
+            - Test-related classes such as Hooks, DriverFactory, LoginSteps, RunCucumberTest are under src/test/java
+
             Dependencies:
             - org.seleniumhq.selenium:selenium-java:%2$s
             - org.junit.jupiter:junit-jupiter:%3$s
             - org.junit.platform:junit-platform-suite-api:%4$s
             - io.cucumber:cucumber-java:%5$s
             - io.cucumber:cucumber-junit-platform-engine:%5$s
+            - io.cucumber:cucumber-picocontainer:%5$s
             - io.github.bonigarcia:webdrivermanager:%6$s
+
+            Dependency scope rules:
+            - selenium-java MUST NOT use <scope>test</scope>
+            - selenium-java must be available to src/main/java classes, so leave it in the default compile scope
+            - junit-jupiter should use <scope>test</scope>
+            - junit-platform-suite-api should use <scope>test</scope>
+            - cucumber-java should use <scope>test</scope>
+            - cucumber-junit-platform-engine should use <scope>test</scope>
+            - cucumber-picocontainer should use <scope>test</scope>
+            - webdrivermanager should use <scope>test</scope>
+
             Plugins:
             - maven-surefire-plugin:%7$s
             - maven-compiler-plugin:%8$s with <release>%1$s</release>
-            GroupId = it.nttdata
-            ArtifactId = %9$s
+
+            GroupId = %9$s
+            ArtifactId = %10$s
+
+            Additional requirements:
+            - Include cucumber-picocontainer with the same version as cucumber-java
+            - The pom.xml must support Cucumber constructor injection for step classes
+            - The generated project must be compatible with:
+                - hooks.Hooks implementing HooksInterface
+                - step classes receiving Hooks through constructor injection
+                - pages.BasePage and pages.LoginPage under src/main/java using Selenium imports
+            - Use standard Maven structure
+            - Ensure all required dependencies are included and valid
+            - Do NOT assign test scope to dependencies required by src/main/java classes
             """,
             javaVersion,
             seleniumVersion,
@@ -153,196 +289,416 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             webdrivermanagerVersion,
             surefireVersion,
             compilerPluginVersion,
+            groupId,
             projectName
         );
 
         String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, systemPrompt + "\n" + userPrompt);
 
         log.info("Risposta of the {} model to build the pom.xml: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString);
+        return validateAndCleanJson(responseCopilString, systemPrompt + "\n" + userPrompt);
    }
 
    public String buildBasePage() throws InterruptedException, ExecutionException{
         log.info("Building BasePage class...");
 
-        String basePagePrompt = """
-            Generate BasePage.java with:
-            - Package: pages
-            - Abstract class: BasePage
-            - Constructor that accepts WebDriver
-            - Use PageFactory.initElements
-            - Add methods: open, waitForElement, clickElement, typeText, getElementText
+        String [] partsOfGroupId = groupId.split("\\.");
 
-            Return ONLY this JSON on ONE line, nothing else:
-            {{"path":"src/main/java/pages/BasePage.java","content":"<complete Java code with all braces and semicolons, newlines as \\n>"}}
+        String basePagePrompt = String.format("""
+            Generate the file BasePage.java inside package pages.
 
-            IMPORTANT:
-            - Include all opening and closing braces {{ }}
-            - Include all semicolons
-            - Make sure the class is complete
-            - Newlines as \\n
-            - Quotes as \\"
-            - Single line JSON
-            """;
+            Requirements:
+            - Package: %1$s.%2$s.pages
+            - Create an abstract generic class with this signature:
+              public abstract class BasePage<T extends BasePage<T>> extends LoadableComponent<T>
+            - Import java.time.Duration
+            - Import org.openqa.selenium.By
+            - Import org.openqa.selenium.WebDriver
+            - Import org.openqa.selenium.WebElement
+            - Import org.openqa.selenium.support.PageFactory
+            - Import org.openqa.selenium.support.ui.ExpectedConditions
+            - Import org.openqa.selenium.support.ui.LoadableComponent
+            - Import org.openqa.selenium.support.ui.WebDriverWait
+            - Declare protected fields named driver and wait
+            - In the constructor:
+                - Accept a WebDriver parameter
+                - Assign it to the driver field
+                - Initialize wait with new WebDriverWait(driver, Duration.ofSeconds(10))
+                - Call PageFactory.initElements(driver, this)
+            - Add method open(String url) that calls driver.get(url)
+            - Add method protected WebElement waitForElement(By locator) that returns wait.until(ExpectedConditions.visibilityOfElementLocated(locator))
+            - Add method clickElement(By locator) that clicks the element returned by waitForElement(locator)
+            - Add method typeText(By locator, String text) that clears the element and sends the provided text
+            - Add method getElementText(By locator) that returns the text of the element returned by waitForElement(locator)
+            - The code must be complete, valid, and compilable Java
+
+            Respond only with a single valid JSON object.
+
+            Strict JSON requirements:
+            - Format:
+            {
+                "path": "src/main/java/%1$s/%2$s/pages/BasePage.java",
+                "content": "<full file content with \\n and \\\" escape>"
+            }
+            - Every newline as \\n, quotes as \\\".
+            - Single line JSON.
+            - No extra text or explanations.
+        """, partsOfGroupId[0], partsOfGroupId[1]);
 
         String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, basePagePrompt);
 
         log.info("Risposta of the {} model to build the base page: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString);
+        return validateAndCleanJson(responseCopilString, basePagePrompt);
     }
 
     private String buildLoginPage() throws InterruptedException, ExecutionException{
         log.info("Building LoginPage class...");
-        String loginPagePrompt = """
-            Generate LoginPage.java:
-            - Extends BasePage
-            - Constructor that receives WebDriver and passes it to BasePage
-            - Fields: usernameInput, passwordInput, loginButton, errorBox
-            - Methods: enterUsername, enterPassword, submit, getErrorMessage
-            Rules:
-            - Respond only with a single valid JSON object.
-            - JSON format:
-                {{
-                    "path": "src/main/java/pages/LoginPage.java",
-                    "content": "<full file content with \\n for each newline and all internal quotes escaped>"
-                }}
+
+        String [] partsOfGroupId = groupId.split("\\.");
+
+        String loginPagePrompt = String.format("""
+            Generate the file LoginPage.java inside package pages.
+
+            Requirements:
+            - Package: %1$s.%2$s.pages
+            - Create a class named LoginPage
+            - The class must extend BasePage<LoginPage>
+            - Import org.openqa.selenium.By
+            - Import org.openqa.selenium.WebDriver
+            - Import org.openqa.selenium.support.ui.ExpectedConditions
+            - Declare these private final By fields with exactly these names and locators:
+                - usernameInput = By.id("username")
+                - passwordInput = By.id("password")
+                - loginButton = By.cssSelector("button[type='submit']")
+                - errorBox = By.cssSelector(".error, .alert-danger, [role='alert']")
+            - Add a constructor that receives a WebDriver and calls super(driver)
+            - Do NOT declare another WebDriver field in this class, because the inherited driver field from BasePage must be reused
+            - Override the method load() with an empty implementation
+            - Override the method isLoaded() throws Error
+            - In isLoaded():
+                - Use wait.until(ExpectedConditions.visibilityOfElementLocated(usernameInput))
+
+            Page behavior methods:
+            - Add method enterUsername(String username)
+                - Use the inherited helper method typeText(usernameInput, username)
+            - Add method enterPassword(String password)
+                - Use the inherited helper method typeText(passwordInput, password)
+            - Add method submit()
+                - Use the inherited helper method clickElement(loginButton)
+            - Add method getErrorMessage()
+                - Use the inherited helper method getElementText(errorBox)
+
+            Design constraints:
+            - Reuse BasePage behavior instead of duplicating direct driver.findElement(...) logic where possible
+            - Keep the same functional behavior as a standard login page object
+            - The code must be complete, valid, and compilable Java
+            - The class must remain compatible with BasePage<LoginPage> and its inherited protected fields and helper methods
+
+            Respond only with a single valid JSON object.
+
+            Strict JSON requirements:
+            - Format:
+            {
+                "path": "src/main/java/%1$s/%2$s/pages/LoginPage.java",
+                "content": "<full file content with \\n and \\\" escape>"
+            }
             - Every newline as \\n, quotes as \\\".
             - Single line JSON.
-            - No extra text or explanations.            
-        """;
+            - No extra text or explanations.
+        """, partsOfGroupId[0], partsOfGroupId[1]);
 
         String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginPagePrompt);
 
         log.info("Risposta of the {} model to build the login page: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString);
+        return validateAndCleanJson(responseCopilString, loginPagePrompt);
     }
 
     private String buildDriverFactory() throws InterruptedException, ExecutionException{
         log.info("Building DriverFactory class...");
-        String driverFactoryPrompt = """
-            Generate the file DriverFactory.java inside package driver.
+
+        String [] partsOfGroupId = groupId.split("\\.");
+
+        String driverFactoryPrompt = String.format("""
+            Generate the file DriverFactory.java inside package %1$s.%2$s.driver.
 
             Requirements:
-            - Create a class named DriverFactory
-            - Provide two static methods: createDriver and destroyDriver
+            - Create a class named DriverFactory inside package driver
+            - Do NOT use static methods for driver lifecycle management
+            - Provide exactly two public instance methods named createDriver and destroyDriver
+            - Declare a private ThreadLocal<WebDriver> field to store the driver managed by this DriverFactory instance
             - In createDriver:
-                - Initialize Chrome WebDriver using WebDriverManager
-                - Configure ChromeOptions with common capabilities (e.g. start-maximized, disable notifications)
-                - Return the WebDriver instance
+                - If the current thread already has a WebDriver instance, return that existing instance
+                - Otherwise initialize Chrome WebDriver using WebDriverManager
+                - Configure ChromeOptions with common capabilities such as start-maximized and disable-notifications
+                - Create the ChromeDriver instance
+                - Store the created WebDriver inside the ThreadLocal field
+                - Return the stored WebDriver instance
             - In destroyDriver:
-                - Properly quit the WebDriver instance if not null
-            - Ensure thread safety if possible (e.g. ThreadLocal WebDriver)
+                - Read the current thread WebDriver from the ThreadLocal field
+                - If the driver is not null, quit it properly
+                - Remove the value from the ThreadLocal field after quitting
+            - DriverFactory must encapsulate all browser creation and destruction logic
+            - The code must be complete, valid, and compilable Java
+
+            Alignment with Hooks:
+            - This class will be used by Hooks through a DriverFactory instance created as new DriverFactory()
+            - Hooks will call driverFactory.createDriver() inside the @Before method
+            - Hooks will call driverFactory.destroyDriver() inside the @After method
+            - Therefore createDriver and destroyDriver MUST be instance methods and MUST NOT be static
+
+            Strict constraints:
+            - DO NOT declare createDriver as static
+            - DO NOT declare destroyDriver as static
+            - DO NOT expose extra public lifecycle methods besides createDriver and destroyDriver
+            - DO NOT put Cucumber annotations in this class
+            - DO NOT move lifecycle responsibilities out of DriverFactory
+            - DO NOT omit imports required for WebDriver, ChromeDriver, ChromeOptions, and WebDriverManager
 
             Respond only with a single valid JSON object.
 
             Strict JSON requirements:
             - Format:
-            {{
-                "path": "src/test/java/driver/DriverFactory.java",
+            {
+                "path": "src/test/java/%1$s/%2$s/driver/DriverFactory.java",
                 "content": "<full file content with \\n and \\\" escape>"
-            }}
+            }
             - Every newline as \\n, quotes as \\\".
             - Single line JSON.
             - No extra text or explanations.
-        """;
+        """, partsOfGroupId[0], partsOfGroupId[1]);
 
         String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, driverFactoryPrompt);
 
         log.info("Risposta of the {} model to build the DriverFactory: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString);
+        return validateAndCleanJson(responseCopilString, driverFactoryPrompt);
     }
 
     private String buildHooks() throws InterruptedException, ExecutionException{
         log.info("Building Hooks class...");
-        String hooksPrompt = """
-            Generate the file Hooks.java inside package hooks.
+
+        String [] partsOfGroupId = groupId.split("\\.");
+
+        String hooksPrompt = String.format("""
+            Generate the file Hooks.java inside package %1$s.%2$s.hooks.
+
             Requirements:
-            - Use @Before and @After annotations
-            - Initialize and quit Chrome WebDriver using WebDriverManager
-            - Share WebDriver with step classes
+            - Create a class named Hooks inside package %1$s.%2$s.hooks
+            - The class must implement HooksInterface
+            - Import %1$s.%2$s.driver.DriverFactory
+            - Import io.cucumber.java.Before
+            - Import io.cucumber.java.After
+            - Import org.openqa.selenium.WebDriver
+            - Declare a private field named driverFactory of type DriverFactory
+            - Declare a private field named driver of type WebDriver
+            - Implement the method:
+            public WebDriver getDriver()
+            which must return the field driver
+            - Add a method annotated with @Before named beforeScenario
+            - In beforeScenario:
+                - Instantiate DriverFactory with new DriverFactory()
+                - Assign it to the field driverFactory
+                - Initialize the field driver by calling driverFactory.createDriver()
+            - Add a method annotated with @After named afterScenario
+            - In afterScenario:
+                - Call driverFactory.destroyDriver()
+                - Set driver to null
+            - Do not use static fields
+            - Do not use static methods
+            - Do not create ChromeDriver directly in this class
+            - Do not use WebDriverManager directly in this class
+            - Do not configure ChromeOptions in this class
+            - The class must be complete, valid, and compilable Java
+            - Match this structure exactly:
+                - class Hooks implements HooksInterface
+                - fields: driverFactory, driver
+                - methods: getDriver, beforeScenario, afterScenario
 
             Respond only with a single valid JSON object.
 
             Strict JSON requirements:
             - Format:
-            {{
-                "path": "src/test/java/hooks/Hooks.java",
+            {
+                "path": "src/test/java/%1$s/%2$s/hooks/Hooks.java",
                 "content": "<full file content with \\n and \\\" escape>"
-                }}
+            }
             - Every newline as \\n, quotes as \\\".
             - Single line JSON.
             - No extra text or explanations.
-          """;
+        """, partsOfGroupId[0], partsOfGroupId[1]);
 
         String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, hooksPrompt);
 
         log.info("Risposta of the {} model to build the hooks: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss);
+        return validateAndCleanJson(responseAddGptOss, hooksPrompt);
+    }
+
+    private String buildHooksInterface() throws InterruptedException, ExecutionException{
+        log.info("Building HooksInterface...");
+
+        String [] partsOfGroupId = groupId.split("\\.");
+
+        String hooksInterfacePrompt = String.format("""
+            Generate the file HooksInterface.java inside package %1$s.%2$s.hooks.
+
+            Requirements:
+            - Create an interface named HooksInterface inside package %1$s.%2$s.hooks
+            - Import org.openqa.selenium.WebDriver
+            - Declare exactly one method:
+            WebDriver getDriver();
+            - Do not add any other methods
+            - Do not add fields
+            - The code must be complete, valid, and compilable Java
+            - The generated file must be compatible with a Hooks class that implements HooksInterface and returns a Selenium WebDriver
+
+            Respond only with a single valid JSON object.
+
+            Strict JSON requirements:
+            - Format:
+            {
+                "path": "src/test/java/%1$s/%2$s/hooks/HooksInterface.java",
+                "content": "<full file content with \\n and \\\" escape>"
+            }
+            - Every newline as \\n, quotes as \\\".
+            - Single line JSON.
+            - No extra text or explanations.
+        """, partsOfGroupId[0], partsOfGroupId[1]);
+
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, hooksInterfacePrompt);
+
+        log.info("Risposta of the {} model to build the HooksInterface: {}", modelName, responseAddGptOss);
+        return validateAndCleanJson(responseAddGptOss, hooksInterfacePrompt);
     }
 
     private String buildRunCucumberTest() throws InterruptedException, ExecutionException{
         log.info("Building TestRunner class...");
 
-        String testRunnerPrompt = """
+        String [] partsOfGroupId = groupId.split("\\.");
+
+        String testRunnerPrompt = String.format("""
             Generate RunCucumberTest.java file.
 
             Requirements:
-            - Package: runner
+            - Package: %1$s.%2$s.runner
             - Class name: RunCucumberTest
             - Add these annotations on the class:
             @Suite
             @IncludeEngines("cucumber")
             @SelectClasspathResource("features")
-            @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "steps,hooks")
+            @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "%1$s.%2$s.steps,%1$s.%2$s.hooks")
             @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty, html:target/cucumber-report.html, json:target/cucumber.json")
             - No methods, only annotations
             - MAKE SURE THE CLASS ENDS WITH A CLOSING BRACE }
 
             Return ONLY JSON on ONE line:
-            {{"path":"src/test/java/runner/RunCucumberTest.java","content":"<complete Java code with closing brace, newlines as \\n>"}}
+            {"path":"src/test/java/%1$s/%2$s/runner/RunCucumberTest.java","content":"<complete Java code with closing brace, newlines as \\n>"}
 
             IMPORTANT:
-            - Include all opening and closing braces {{ }}
+            - Include all opening and closing braces { }
             - Include all semicolons
             - Make sure the class is complete
             - Newlines as \\n
-            - Quotes as \\"
+            - Quotes as \\\"
             - Single line JSON
-        """;
+        """, partsOfGroupId[0], partsOfGroupId[1]);
 
         String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, testRunnerPrompt);
 
         log.info("Risposta of the {} model to build the RunCucumberTest: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss);
+        return validateAndCleanJson(responseAddGptOss, testRunnerPrompt);
     }
 
     private String buildLoginSteps() throws InterruptedException, ExecutionException{
         log.info("Building LoginSteps class...");
 
-        String loginStepsPrompt = """
-            Generate LoginSteps.java file.
-            Package steps. Imports: io.cucumber.java.en.*; pages.LoginPage; hooks.Hooks; org.junit.jupiter.api.Assertions.*;
-            Class LoginSteps with private field LoginPage loginPage.
-            5 Cucumber step methods:
-            1. @Given with method openLoginPage(String url) - creates LoginPage with Hooks.getDriver()
-            2. @When with method enterUsername(String username) - calls loginPage.enterUsername
-            3. @And with method enterPassword(String password) - calls loginPage.enterPassword
-            4. @And with method clickLoginButton - calls loginPage.submit
-            5. @Then with method verifyErrorMessage(String expected) - calls assertTrue
-            
-            Return ONLY JSON on ONE line:
-            {{"path":"src/test/java/steps/LoginSteps.java","content":"<complete Java code with braces, newlines as \\n>"}}
-        """;
+        String [] partsOfGroupId = groupId.split("\\.");
+
+        String loginStepsPrompt = String.format("""
+            Generate the file LoginSteps.java inside package %1$s.%2$s.steps.
+
+            Requirements:
+            - Package: %1$s.%2$s.steps
+            - Create a class named LoginSteps
+            - Import io.cucumber.java.en.Given
+            - Import io.cucumber.java.en.When
+            - Import io.cucumber.java.en.And
+            - Import io.cucumber.java.en.Then
+            - Import %1$s.%2$s.pages.LoginPage
+            - Import %1$s.%2$s.hooks.Hooks
+            - Import %1$s.%2$s.hooks.HooksInterface
+            - Import static org.junit.jupiter.api.Assertions.assertTrue
+            - Declare a private final field named hooks of type HooksInterface
+            - Declare a private field named loginPage of type LoginPage
+            - Add a constructor that receives a Hooks object
+            - In the constructor:
+                - Assign the received Hooks instance to the field hooks
+            - Do NOT call Hooks.getDriver() as a static method
+            - Do NOT create a new DriverFactory in this class
+            - Do NOT manage WebDriver lifecycle in this class
+            - This class must use the driver only through hooks.getDriver()
+
+            Cucumber step methods:
+            - Add a method annotated with @Given("I open the login page {string}")
+            - Method signature: openLoginPage(String url)
+            - In openLoginPage:
+                - Create loginPage with new LoginPage(hooks.getDriver())
+                - Call loginPage.open(url)
+                - Call loginPage.get() to verify that the page is loaded
+
+            - Add a method annotated with @When("I enter username {string}")
+            - Method signature: enterUsername(String username)
+            - In enterUsername:
+                - Call loginPage.enterUsername(username)
+
+            - Add a method annotated with @And("I enter password {string}")
+            - Method signature: enterPassword(String password)
+            - In enterPassword:
+                - Call loginPage.enterPassword(password)
+
+            - Add a method annotated with @And("I click the login button")
+            - Method signature: clickLoginButton()
+            - In clickLoginButton:
+                - Call loginPage.submit()
+
+            - Add a method annotated with @Then("I verify an error message containing {string}")
+            - Method signature: verifyErrorMessage(String expected)
+            - In verifyErrorMessage:
+                - Use assertTrue(loginPage.getErrorMessage().contains(expected))
+
+            Design constraints:
+            - Keep step definitions thin and delegate page behavior to LoginPage
+            - Reuse Hooks only as a driver provider
+            - Keep the class focused on step orchestration and assertions
+            - The code must be complete, valid, and compilable Java
+            - The generated code must be compatible with Hooks implementing HooksInterface
+            - Match this structure exactly:
+                - class LoginSteps
+                - fields: hooks, loginPage
+                - constructor: LoginSteps(Hooks hooks)
+                - methods: openLoginPage, enterUsername, enterPassword, clickLoginButton, verifyErrorMessage
+
+            Respond only with a single valid JSON object.
+
+            Strict JSON requirements:
+            - Format:
+            {
+                "path": "src/test/java/%1$s/%2$s/steps/LoginSteps.java",
+                "content": "<full file content with \\n and \\\" escape>"
+            }
+            - Every newline as \\n, quotes as \\\".
+            - Single line JSON.
+            - No extra text or explanations.
+        """, partsOfGroupId[0], partsOfGroupId[1]);
 
         String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginStepsPrompt);
 
         log.info("Risposta of the {} model to build the LoginSteps: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss);
+        return validateAndCleanJson(responseAddGptOss, loginStepsPrompt);
     }
 
     private String buildLoginFeature() throws InterruptedException, ExecutionException{
         log.info("Building login.feature file...");
-        String loginFeaturePrompt = """
+
+        String loginFeaturePrompt = String.format("""
             Generate login.feature:
             - Feature: Login
             - Scenario: Failed login with incorrect credentials
@@ -354,21 +710,21 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             Rules:
             - Respond only with a single valid JSON object.
             - JSON format:
-                {{
+                {
                     "path": "src/test/resources/features/login.feature",
                     "content": "<full file content with \\n for newlines and all internal quotes escaped>"
-                }}
+                }
             - Every newline inside "content" must be encoded as \\n (two backslashes + n).
             - Every double quote inside "content" must be escaped as \\\".
             - The JSON must be on one single line (no pretty-printing, no indentation).
             - Do not add any explanations, comments, or text before or after the JSON.
-            - Output must be strictly valid JSON that can be parsed by com.fasterxml.jackson.databind.ObjectMapper.readTree().          
-          """;
+            - Output must be strictly valid JSON that can be parsed by com.fasterxml.jackson.databind.ObjectMapper.readTree().
+        """);
 
         String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginFeaturePrompt);
 
         log.info("Risposta of the {} model to build the login.feature: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss);
+        return validateAndCleanJson(responseAddGptOss, loginFeaturePrompt);
     }
 
 }

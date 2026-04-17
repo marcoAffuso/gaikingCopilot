@@ -40,6 +40,7 @@ public class NewProjectController {
 
         this.generateTAMavenSeleniumCucumberJunit.setModelName(model);
         this.generateTAMavenSeleniumCucumberJunit.setProjectName(projectName);
+        this.generateTAMavenSeleniumCucumberJunit.setGroupId("com.nttdata");
         this.generateTAMavenSeleniumCucumberJunit.setJavaVersion(javaVersion);
         this.generateTAMavenSeleniumCucumberJunit.setSeleniumVersion(seleniumVersion);
         this.generateTAMavenSeleniumCucumberJunit.setJunitVersion(junitVersion);
