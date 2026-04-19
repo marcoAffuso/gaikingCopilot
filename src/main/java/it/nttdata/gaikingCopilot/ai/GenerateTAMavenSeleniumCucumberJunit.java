@@ -299,7 +299,7 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             projectName
         );
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, systemPrompt + "\n" + userPrompt);
+        String responseCopilString = copilotService.getResponseCopilotWithStreaming(modelName, systemPrompt + "\n" + userPrompt);
 
         log.info("Risposta of the {} model to build the pom.xml: {}", modelName, responseCopilString);
         return validateAndCleanJson(responseCopilString, systemPrompt + "\n" + userPrompt);
@@ -589,54 +589,6 @@ public class GenerateTAMavenSeleniumCucumberJunit {
         log.info("Building Hooks class...");
 
         String [] partsOfGroupId = groupId.split("\\.");
-
-        // String hooksPrompt = String.format("""
-        //     Generate the file Hooks.java inside package %1$s.%2$s.hooks.
-
-        //     Requirements:
-        //     - Create a class named Hooks inside package %1$s.%2$s.hooks
-        //     - The class must implement HooksInterface
-        //     - Import %1$s.%2$s.driver.DriverFactory
-        //     - Import io.cucumber.java.Before
-        //     - Import io.cucumber.java.After
-        //     - Import org.openqa.selenium.WebDriver
-        //     - Declare a private field named driverFactory of type DriverFactory
-        //     - Declare a private field named driver of type WebDriver
-        //     - Implement the method:
-        //     public WebDriver getDriver()
-        //     which must return the field driver
-        //     - Add a method annotated with @Before named beforeScenario
-        //     - In beforeScenario:
-        //         - Instantiate DriverFactory with new DriverFactory()
-        //         - Assign it to the field driverFactory
-        //         - Initialize the field driver by calling driverFactory.createDriver()
-        //     - Add a method annotated with @After named afterScenario
-        //     - In afterScenario:
-        //         - Call driverFactory.destroyDriver()
-        //         - Set driver to null
-        //     - Do not use static fields
-        //     - Do not use static methods
-        //     - Do not create ChromeDriver directly in this class
-        //     - Do not use WebDriverManager directly in this class
-        //     - Do not configure ChromeOptions in this class
-        //     - The class must be complete, valid, and compilable Java
-        //     - Match this structure exactly:
-        //         - class Hooks implements HooksInterface
-        //         - fields: driverFactory, driver
-        //         - methods: getDriver, beforeScenario, afterScenario
-
-        //     Respond only with a single valid JSON object.
-
-        //     Strict JSON requirements:
-        //     - Format:
-        //     {
-        //         "path": "src/test/java/%1$s/%2$s/hooks/Hooks.java",
-        //         "content": "<full file content with \\n and \\\" escape>"
-        //     }
-        //     - Every newline as \\n, quotes as \\\".
-        //     - Single line JSON.
-        //     - No extra text or explanations.
-        // """, partsOfGroupId[0], partsOfGroupId[1]);
 
         String hooksPrompt = String.format("""
             Generate the file Hooks.java inside package %1$s.%2$s.hooks.
