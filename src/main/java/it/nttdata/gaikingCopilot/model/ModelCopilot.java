@@ -1,5 +1,7 @@
 package it.nttdata.gaikingCopilot.model;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -8,5 +10,7 @@ import lombok.Data;
 public class ModelCopilot {
     private String id;
     private String name;
+    private List<String> supportedReasoningEfforts;
+    private boolean isReasoningEffort;
 
 }

@@ -31,8 +31,16 @@ public class CopilotController {
     public List<ModelCopilot> getCopilotModels() throws InterruptedException, ExecutionException {
 
         List<ModelInfo> models = copilotService.getCopilotModel();
+        log.info("models {} ", models);
         return models.stream()
-                .map(model -> new ModelCopilot(model.getId(), model.getName()))
+            .map(model -> new ModelCopilot(
+                model.getId(),
+                model.getName(),
+                model.getSupportedReasoningEfforts(),
+                model.getCapabilities() != null
+                    && model.getCapabilities().getSupports() != null
+                    && model.getCapabilities().getSupports().isReasoningEffort()
+            ))
                 .toList();
     }
 

@@ -202,11 +202,16 @@ public class CopilotService {
             result = result.getCause();
         }
 
+        log.debug("Root cause identified. causeType={}, causeMessage={}",
+                result.getClass().getName(),
+                result.getMessage());
+
         return result;
     }
 
     private CustomException buildCopilotException(String defaultMessage, Throwable cause) {
         String causeMessage = cause.getMessage() != null ? cause.getMessage() : "Errore sconosciuto";
+        log.error("{}: causeType={}, causeMessage={}", defaultMessage, cause.getClass().getName(), causeMessage, cause);
 
         if (cause instanceof TimeoutException) {
             return new CustomException(
