@@ -230,62 +230,163 @@ public class GenerateTAMavenSeleniumCucumberJunit {
    private String buildPOM() throws InterruptedException, ExecutionException{
         log.info("Building POM file...");
 
-        String systemPrompt = """
-            Generate pom.xml for a Maven project.
+        // String pomPrompt = String.format("""
+        //     Generate pom.xml for a Maven project.
+
+        //     Rules:
+        //     - Respond only with one single valid JSON object.
+        //     - JSON format:
+        //     {"path":"pom.xml","content":"<full pom.xml (XML) with \\n for newlines and \\\" for quotes>"}
+        //     - The value of "content" must be only valid XML, not JSON.
+        //     - Every newline as \\n, quotes as \\\".
+        //     - Single line JSON.
+        //     - No extra text or explanations.
+
+        //     Generate pom.xml for a Maven project (Java %1$s).
+
+        //     Project structure requirements:
+        //     - Classes pages.BasePage and pages.LoginPage are under src/main/java
+        //     - Therefore Selenium classes used by src/main/java must be available in main compile scope
+        //     - Test-related classes such as Hooks, DriverFactory, LoginSteps, RunCucumberTest are under src/test/java
+
+        //     Dependencies:
+        //     - org.seleniumhq.selenium:selenium-java:%2$s
+        //     - org.junit.jupiter:junit-jupiter:%3$s
+        //     - org.junit.platform:junit-platform-suite-api:%4$s
+        //     - io.cucumber:cucumber-java:%5$s
+        //     - io.cucumber:cucumber-junit-platform-engine:%5$s
+        //     - io.cucumber:cucumber-picocontainer:%5$s
+        //     - io.github.bonigarcia:webdrivermanager:%6$s
+
+        //     Dependency scope rules:
+        //     - selenium-java MUST NOT use <scope>test</scope>
+        //     - selenium-java must be available to src/main/java classes, so leave it in the default compile scope
+        //     - junit-jupiter should use <scope>test</scope>
+        //     - junit-platform-suite-api should use <scope>test</scope>
+        //     - cucumber-java should use <scope>test</scope>
+        //     - cucumber-junit-platform-engine should use <scope>test</scope>
+        //     - cucumber-picocontainer should use <scope>test</scope>
+        //     - webdrivermanager should use <scope>test</scope>
+
+        //     Plugins:
+        //     - maven-surefire-plugin:%7$s
+        //     - maven-compiler-plugin:%8$s with <release>%1$s</release>
+
+        //     GroupId = %9$s
+        //     ArtifactId = %10$s
+
+        //     Additional requirements:
+        //     - Include cucumber-picocontainer with the same version as cucumber-java
+        //     - The pom.xml must support Cucumber constructor injection for step classes
+        //     - The generated project must be compatible with:
+        //         - hooks.Hooks implementing HooksInterface
+        //         - step classes receiving Hooks through constructor injection
+        //         - pages.BasePage and pages.LoginPage under src/main/java using Selenium imports
+        //     - Use standard Maven structure
+        //     - Ensure all required dependencies are included and valid
+        //     - Do NOT assign test scope to dependencies required by src/main/java classes
+        //     """,
+        //     javaVersion,
+        //     seleniumVersion,
+        //     junitVersion,
+        //     junitPlatformVersion,
+        //     cucumberVersion,
+        //     webdrivermanagerVersion,
+        //     surefireVersion,
+        //     compilerPluginVersion,
+        //     groupId,
+        //     projectName
+        // );
+
+        // String pomPrompt = String.format("""
+        //     Generate a Maven pom.xml for Java %1$s.
+
+        //     Return exactly one JSON object on a single line:
+        //     {"path":"pom.xml","content":"<full pom.xml XML with \\n for newlines and \\\" for quotes>"}
+
+        //     Output rules:
+        //     - No text before or after the JSON
+        //     - content must contain only valid XML
+        //     - Escape newlines as \\n and double quotes as \\\"
+        //     - The JSON must be parseable by Jackson ObjectMapper.readTree()
+
+        //     Coordinates:
+        //     - groupId: %9$s
+        //     - artifactId: %10$s
+
+        //     Project constraints:
+        //     - pages.BasePage and pages.LoginPage are in src/main/java, so selenium-java must stay in main compile scope
+        //     - Hooks, DriverFactory, LoginSteps, and RunCucumberTest are in src/test/java
+        //     - Use standard Maven structure
+        //     - Support Cucumber constructor injection
+        //     - Keep compatibility with Hooks implementing HooksInterface, constructor-injected step classes, and Selenium page classes in src/main/java
+
+        //     Dependencies and scopes:
+        //     - org.seleniumhq.selenium:selenium-java:%2$s -> compile only, never test
+        //     - org.junit.jupiter:junit-jupiter:%3$s -> test
+        //     - org.junit.platform:junit-platform-suite-api:%4$s -> test
+        //     - io.cucumber:cucumber-java:%5$s -> test
+        //     - io.cucumber:cucumber-junit-platform-engine:%5$s -> test
+        //     - io.cucumber:cucumber-picocontainer:%5$s -> test
+        //     - io.github.bonigarcia:webdrivermanager:%6$s -> test
+
+        //     Plugins:
+        //     - maven-surefire-plugin:%7$s
+        //     - maven-compiler-plugin:%8$s with <release>%1$s</release>
+
+        //     Requirements:
+        //     - Include all listed dependencies and plugins
+        //     - Keep cucumber-picocontainer at the same version as cucumber-java
+        //     - Do not assign test scope to anything required by src/main/java
+        //     """,
+        //     javaVersion,
+        //     seleniumVersion,
+        //     junitVersion,
+        //     junitPlatformVersion,
+        //     cucumberVersion,
+        //     webdrivermanagerVersion,
+        //     surefireVersion,
+        //     compilerPluginVersion,
+        //     groupId,
+        //     projectName
+        // );
+
+        String pomPrompt = String.format("""
+            Generate pom.xml for a Java %1$s Maven project.
+
+            Return exactly one single-line JSON object:
+            {"path":"pom.xml","content":"<full XML with \\n and \\\" escaped>"}
+
             Rules:
-            - Respond only with one single valid JSON object.
-            - JSON format:
-            {"path":"pom.xml","content":"<full pom.xml (XML) with \\n for newlines and \\\" for quotes>"}
-            - The value of "content" must be only valid XML, not JSON.
-            - Every newline as \\n, quotes as \\\".
-            - Single line JSON.
-            - No extra text or explanations.
-            """;
+            - No extra text
+            - content must be valid XML
+            - JSON must be parseable by Jackson ObjectMapper.readTree()
 
-        String userPrompt = String.format("""
-            Generate pom.xml for a Maven project (Java %1$s).
+            groupId=%9$s
+            artifactId=%10$s
 
-            Project structure requirements:
-            - Classes pages.BasePage and pages.LoginPage are under src/main/java
-            - Therefore Selenium classes used by src/main/java must be available in main compile scope
-            - Test-related classes such as Hooks, DriverFactory, LoginSteps, RunCucumberTest are under src/test/java
+            Use standard Maven structure.
+            pages.BasePage and pages.LoginPage are in src/main/java, so selenium-java must be compile scope, never test.
+            Hooks, DriverFactory, LoginSteps, and RunCucumberTest are in src/test/java.
+            Support Cucumber constructor injection.
+            Keep compatibility with HooksInterface-based hooks, constructor-injected step classes, and Selenium page classes in src/main/java.
 
             Dependencies:
-            - org.seleniumhq.selenium:selenium-java:%2$s
-            - org.junit.jupiter:junit-jupiter:%3$s
-            - org.junit.platform:junit-platform-suite-api:%4$s
-            - io.cucumber:cucumber-java:%5$s
-            - io.cucumber:cucumber-junit-platform-engine:%5$s
-            - io.cucumber:cucumber-picocontainer:%5$s
-            - io.github.bonigarcia:webdrivermanager:%6$s
-
-            Dependency scope rules:
-            - selenium-java MUST NOT use <scope>test</scope>
-            - selenium-java must be available to src/main/java classes, so leave it in the default compile scope
-            - junit-jupiter should use <scope>test</scope>
-            - junit-platform-suite-api should use <scope>test</scope>
-            - cucumber-java should use <scope>test</scope>
-            - cucumber-junit-platform-engine should use <scope>test</scope>
-            - cucumber-picocontainer should use <scope>test</scope>
-            - webdrivermanager should use <scope>test</scope>
+            - org.seleniumhq.selenium:selenium-java:%2$s compile
+            - org.junit.jupiter:junit-jupiter:%3$s test
+            - org.junit.platform:junit-platform-suite-api:%4$s test
+            - io.cucumber:cucumber-java:%5$s test
+            - io.cucumber:cucumber-junit-platform-engine:%5$s test
+            - io.cucumber:cucumber-picocontainer:%5$s test
+            - io.github.bonigarcia:webdrivermanager:%6$s test
 
             Plugins:
             - maven-surefire-plugin:%7$s
             - maven-compiler-plugin:%8$s with <release>%1$s</release>
 
-            GroupId = %9$s
-            ArtifactId = %10$s
-
-            Additional requirements:
-            - Include cucumber-picocontainer with the same version as cucumber-java
-            - The pom.xml must support Cucumber constructor injection for step classes
-            - The generated project must be compatible with:
-                - hooks.Hooks implementing HooksInterface
-                - step classes receiving Hooks through constructor injection
-                - pages.BasePage and pages.LoginPage under src/main/java using Selenium imports
-            - Use standard Maven structure
-            - Ensure all required dependencies are included and valid
-            - Do NOT assign test scope to dependencies required by src/main/java classes
+            Include all listed dependencies/plugins.
+            Keep cucumber-picocontainer same version as cucumber-java.
+            Do not put in test scope anything needed by src/main/java.
             """,
             javaVersion,
             seleniumVersion,
@@ -299,10 +400,10 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             projectName
         );
 
-        String responseCopilString = copilotService.getResponseCopilotWithStreaming(modelName, systemPrompt + "\n" + userPrompt);
+        String responseCopilString = copilotService.getResponseCopilotWithStreaming(modelName, pomPrompt);
 
         log.info("Risposta of the {} model to build the pom.xml: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString, systemPrompt + "\n" + userPrompt);
+        return validateAndCleanJson(responseCopilString, pomPrompt);
    }
 
    public String buildBasePage() throws InterruptedException, ExecutionException{
