@@ -1,6 +1,8 @@
 spring:
   application:
     name: gaikingCopilot
+  config:
+    import: optional:classpath:githubProprieties.yml
 
 logging:
   file:

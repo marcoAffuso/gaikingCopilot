@@ -13,7 +13,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
@@ -30,7 +29,7 @@ import lombok.extern.log4j.Log4j2;
 import reactor.core.publisher.Flux;
 import reactor.netty.http.client.HttpClient;
 
-@Component
+
 @Log4j2
 public class RestApi {
 

@@ -13,6 +13,7 @@ import com.github.copilot.sdk.events.AssistantMessageDeltaEvent;
 import com.github.copilot.sdk.events.AssistantMessageEvent;
 import com.github.copilot.sdk.events.SessionErrorEvent;
 import com.github.copilot.sdk.events.SessionIdleEvent;
+import com.github.copilot.sdk.json.CopilotClientOptions;
 import com.github.copilot.sdk.json.MessageOptions;
 import com.github.copilot.sdk.json.ModelInfo;
 import com.github.copilot.sdk.json.PermissionHandler;
@@ -25,10 +26,13 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class CopilotService {
 
-    public List<ModelInfo> getCopilotModel() throws InterruptedException {
+
+
+
+    public List<ModelInfo> getCopilotModel(String githubToken) throws InterruptedException {
         log.info("getCopilotModel");
 
-        try (CopilotClient client = new CopilotClient()) {
+        try (CopilotClient client = createClient(githubToken)) {
             log.info("CopilotClient created successfully.");
             log.info("Retrieving Copilot models...");
 
@@ -49,12 +53,13 @@ public class CopilotService {
         }
     }
 
-    public String getResponseCopilotWhitOutStreaming(String model, String prompt) throws InterruptedException {
+    public String getResponseCopilotWhitOutStreaming(String githubToken, String model, String prompt) throws InterruptedException {
         log.info("getResponseCopilotWhitOutStreaming");
 
+        validateGitHubToken(githubToken);
         validateInput(model, prompt);
 
-        try (CopilotClient client = new CopilotClient()) {
+        try (CopilotClient client = createClient(githubToken)) {
             client.start().get();
             log.info("CopilotClient started successfully. model={}, promptLength={}", model, prompt.length());
 
@@ -95,12 +100,13 @@ public class CopilotService {
         }
     }
 
-    public String getResponseCopilotWithStreaming(String model, String prompt) throws InterruptedException {
+    public String getResponseCopilotWithStreaming(String githubToken, String model, String prompt) throws InterruptedException {
         log.info("getResponseCopilotWithStreaming");
 
+        validateGitHubToken(githubToken);
         validateInput(model, prompt);
 
-        try (CopilotClient client = new CopilotClient()) {
+        try (CopilotClient client = createClient(githubToken)) {
             client.start().get();
             log.info("CopilotClient started successfully. model={}, promptLength={}", model, prompt.length());
 
@@ -182,6 +188,20 @@ public class CopilotService {
                     cause);
 
             throw buildCopilotException("Errore durante la chiamata streaming a Copilot", cause);
+        }
+    }
+
+    private CopilotClient createClient(String githubToken) {
+        CopilotClientOptions options = new CopilotClientOptions()
+                .setGitHubToken(githubToken)
+                .setUseLoggedInUser(false);
+
+        return new CopilotClient(options);
+    }
+
+    private void validateGitHubToken(String githubToken) {
+        if (githubToken == null || githubToken.isBlank()) {
+            throw new IllegalArgumentException("GitHub access token obbligatorio.");
         }
     }
 

@@ -1,0 +1,7 @@
+github:
+  oauth:
+    client-id: Ov23liKP6UnIhoZHmTqU
+    client-secret: bffa937d816106df5ca5472116263dd630a0fed9
+
+app:
+  base-url: http://localhost:8080

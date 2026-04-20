@@ -5,10 +5,10 @@ import java.util.concurrent.ExecutionException;
 import org.springframework.stereotype.Service;
 
 import it.nttdata.gaikingCopilot.copilot.CopilotService;
+import it.nttdata.gaikingCopilot.model.AutomationProjectRequest;
 import it.nttdata.gaikingCopilot.utility.ProjectFileWriterTool;
 import it.nttdata.gaikingCopilot.utility.ReadAndWriteJson;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -22,55 +22,32 @@ public class GenerateTAMavenSeleniumCucumberJunit {
 
     private final CopilotService copilotService;
 
-    @Setter
-    private String modelName = "gpt-5.3-codex";
-
-    @Setter
-    private String projectName = "automation-generated";
-
-    @Setter
-    private String groupId = "it.nttdata";
-
-    @Setter
-    private String javaVersion;
-    @Setter
-    private String seleniumVersion;
-    @Setter
-    private String junitVersion;
-    @Setter
-    private String junitPlatformVersion;
-    @Setter
-    private String cucumberVersion;
-    @Setter
-    private String webdrivermanagerVersion;
-    @Setter
-    private String surefireVersion;
-    @Setter
-    private String compilerPluginVersion;
-
     private static final int MAX_JSON_REPAIR_RETRIES = 1;
 
-    private String validateAndCleanJson(String response, String originalPrompt)
-            throws InterruptedException, ExecutionException {
+    private String validateAndCleanJson(
+            AutomationProjectRequest request,
+            String githubToken,
+            String response,
+            String originalPrompt) throws InterruptedException, ExecutionException {
 
         log.info("Raw LLM output:\n{}", response);
 
         String candidate = sanitizeJsonCandidate(response);
-        if (this.readAndWriteJson.isValidJson(candidate)) {
+        if (readAndWriteJson.isValidJson(candidate)) {
             log.info("Response is valid JSON after initial sanitization.");
             return candidate;
         }
 
-        String parserError = this.readAndWriteJson.getJsonValidationError(candidate);
+        String parserError = readAndWriteJson.getJsonValidationError(candidate);
         log.warn("Invalid JSON detected. Parser error: {}", parserError);
 
         String cleanedCandidate = tryLocalJsonRepairs(candidate);
-        if (this.readAndWriteJson.isValidJson(cleanedCandidate)) {
+        if (readAndWriteJson.isValidJson(cleanedCandidate)) {
             log.info("Local cleanup produced valid JSON.");
             return cleanedCandidate;
         }
 
-        String cleanedParserError = this.readAndWriteJson.getJsonValidationError(cleanedCandidate);
+        String cleanedParserError = readAndWriteJson.getJsonValidationError(cleanedCandidate);
         log.warn("JSON still invalid after local cleanup. Parser error: {}", cleanedParserError);
 
         if (originalPrompt == null || originalPrompt.isBlank()) {
@@ -94,26 +71,30 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             );
 
             String repairPrompt = buildJsonRepairPrompt(originalPrompt, latestCandidate, latestParserError);
-            String retriedResponse = copilotService.getResponseCopilotWhitOutStreaming(modelName, repairPrompt);
+            String retriedResponse = copilotService.getResponseCopilotWhitOutStreaming(
+                    githubToken,
+                    request.modelName(),
+                    repairPrompt
+            );
 
             log.info("Repair attempt {} raw output:\n{}", attempt, retriedResponse);
 
             latestCandidate = sanitizeJsonCandidate(retriedResponse);
-            if (this.readAndWriteJson.isValidJson(latestCandidate)) {
+            if (readAndWriteJson.isValidJson(latestCandidate)) {
                 log.info("Repair attempt {} produced valid JSON.", attempt);
                 return latestCandidate;
             }
 
-            latestParserError = this.readAndWriteJson.getJsonValidationError(latestCandidate);
+            latestParserError = readAndWriteJson.getJsonValidationError(latestCandidate);
             log.warn("Repair attempt {} still invalid before local cleanup. Parser error: {}", attempt, latestParserError);
 
             latestCandidate = tryLocalJsonRepairs(latestCandidate);
-            if (this.readAndWriteJson.isValidJson(latestCandidate)) {
+            if (readAndWriteJson.isValidJson(latestCandidate)) {
                 log.info("Repair attempt {} produced valid JSON after local cleanup.", attempt);
                 return latestCandidate;
             }
 
-            latestParserError = this.readAndWriteJson.getJsonValidationError(latestCandidate);
+            latestParserError = readAndWriteJson.getJsonValidationError(latestCandidate);
             log.warn("Repair attempt {} still invalid after local cleanup. Parser error: {}", attempt, latestParserError);
         }
 
@@ -183,30 +164,60 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             """ + invalidJsonResponse;
     }
 
+    private void validateRequest(AutomationProjectRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("AutomationProjectRequest obbligatoria.");
+        }
 
-   public void generateAutomationJavaSeleniumCucumberProject() throws InterruptedException, ExecutionException {
-        log.info("Generating Java Selenium Cucumber Project...");
-        String pomContent = buildPOM();
+        requireNotBlank(request.modelName(), "modelName");
+        requireNotBlank(request.projectName(), "projectName");
+        requireNotBlank(request.groupId(), "groupId");
+        requireNotBlank(request.javaVersion(), "javaVersion");
+        requireNotBlank(request.seleniumVersion(), "seleniumVersion");
+        requireNotBlank(request.junitVersion(), "junitVersion");
+        requireNotBlank(request.junitPlatformVersion(), "junitPlatformVersion");
+        requireNotBlank(request.cucumberVersion(), "cucumberVersion");
+        requireNotBlank(request.webdrivermanagerVersion(), "webdrivermanagerVersion");
+        requireNotBlank(request.surefireVersion(), "surefireVersion");
+        requireNotBlank(request.compilerPluginVersion(), "compilerPluginVersion");
+    }
+
+    private void requireNotBlank(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Il parametro '" + fieldName + "' è obbligatorio.");
+        }
+    }
+
+
+   public void generateAutomationJavaSeleniumCucumberProject(
+        AutomationProjectRequest request,
+        String githubToken
+   ) throws InterruptedException, ExecutionException {
+        
+        validateRequest(request);
+
+        log.info("Generating Java Selenium Cucumber Project for project={}", request.projectName());
+        String pomContent = buildPOM(request, githubToken);
         log.info("pom Content\n" + pomContent);
-        String basePageContent = buildBasePage();
+        String basePageContent = buildBasePage(request, githubToken);
         log.info("BasePage Content\n" + basePageContent);
-        String loginPageContent = buildLoginPage();
+        String loginPageContent = buildLoginPage(request, githubToken);
         log.info("LoginPage Content\n" + loginPageContent);
-        String pageObjectManagerContent = buildPageObjectManager();
+        String pageObjectManagerContent = buildPageObjectManager(request, githubToken);
         log.info("PageObjectManager Content\n" + pageObjectManagerContent);
-        String driverFactoryContent = buildDriverFactory();
+        String driverFactoryContent = buildDriverFactory(request, githubToken);
         log.info("DriverFactory Content\n" + driverFactoryContent);
-        String hooksContent = buildHooks();
+        String hooksContent = buildHooks(request, githubToken);
         log.info("Hooks Content\n" + hooksContent);
-        String hooksInterfaceContent = buildHooksInterface();
+        String hooksInterfaceContent = buildHooksInterface(request, githubToken);
         log.info("HooksInterface Content\n" + hooksInterfaceContent);
-        String testRunnerContent = buildRunCucumberTest();
+        String testRunnerContent = buildRunCucumberTest(request, githubToken);
         log.info("TestRunner Content\n" + testRunnerContent);
-        String testContextContent = buildTestContext();
+        String testContextContent = buildTestContext(request, githubToken);
         log.info("TestContext Content\n" + testContextContent);
-        String loginStepsContent = buildLoginSteps();
+        String loginStepsContent = buildLoginSteps(request, githubToken);
         log.info("LoginSteps Content\n" + loginStepsContent);
-        String loginFeatureContent = buildLoginFeature();
+        String loginFeatureContent = buildLoginFeature(request, githubToken);
         log.info("LoginFeature Content\n" + loginFeatureContent);
 
         // Combina tutti i file in un unico JSON
@@ -224,10 +235,10 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             + loginFeatureContent
             + "] }";
         log.info("Generated Project JSON:\n" + projectJson);
-        fileWriterTool.writeProjectFiles(projectName, projectJson);
+        fileWriterTool.writeProjectFiles(request.projectName(), projectJson);
    }
 
-   private String buildPOM() throws InterruptedException, ExecutionException{
+   private String buildPOM(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building POM file...");
 
         String pomPrompt = String.format("""
@@ -267,28 +278,28 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             Keep cucumber-picocontainer same version as cucumber-java.
             Do not put in test scope anything needed by src/main/java.
             """,
-            javaVersion,
-            seleniumVersion,
-            junitVersion,
-            junitPlatformVersion,
-            cucumberVersion,
-            webdrivermanagerVersion,
-            surefireVersion,
-            compilerPluginVersion,
-            groupId,
-            projectName
+            request.javaVersion(),
+            request.seleniumVersion(),
+            request.junitVersion(),
+            request.junitPlatformVersion(),
+            request.cucumberVersion(),
+            request.webdrivermanagerVersion(),
+            request.surefireVersion(),
+            request.compilerPluginVersion(),
+            request.groupId(),
+            request.projectName()
         );
 
-        String responseCopilString = copilotService.getResponseCopilotWithStreaming(modelName, pomPrompt);
+        String responseCopilString = copilotService.getResponseCopilotWithStreaming(githubToken, request.modelName(), pomPrompt);
 
-        log.info("Risposta of the {} model to build the pom.xml: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString, pomPrompt);
+        log.info("Risposta of the {} model to build the pom.xml: {}", request.modelName(), responseCopilString);
+        return validateAndCleanJson(request, githubToken, responseCopilString, pomPrompt);
    }
 
-   public String buildBasePage() throws InterruptedException, ExecutionException{
+   public String buildBasePage(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building BasePage class...");
 
-        String [] partsOfGroupId = groupId.split("\\.");
+        String [] partsOfGroupId = request.groupId().split("\\.");
 
         String basePagePrompt = String.format("""
             Generate the file BasePage.java inside package pages.
@@ -331,16 +342,16 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, basePagePrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), basePagePrompt);
 
-        log.info("Risposta of the {} model to build the base page: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString, basePagePrompt);
+        log.info("Risposta of the {} model to build the base page: {}", request.modelName(), responseCopilString);
+        return validateAndCleanJson(request, githubToken, responseCopilString, basePagePrompt);
     }
 
-    private String buildLoginPage() throws InterruptedException, ExecutionException{
+    private String buildLoginPage(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building LoginPage class...");
 
-        String [] partsOfGroupId = groupId.split("\\.");
+        String [] partsOfGroupId = request.groupId().split("\\.");
 
         String loginPagePrompt = String.format("""
             Generate the file LoginPage.java inside package pages.
@@ -393,16 +404,16 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginPagePrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), loginPagePrompt);
 
-        log.info("Risposta of the {} model to build the login page: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString, loginPagePrompt);
+        log.info("Risposta of the {} model to build the login page: {}", request.modelName(), responseCopilString);
+        return validateAndCleanJson(request, githubToken, responseCopilString, loginPagePrompt);
     }
 
-    private String buildPageObjectManager() throws InterruptedException, ExecutionException{
+    private String buildPageObjectManager(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building PageObjectManager class...");
 
-        String[] partsOfGroupId = groupId.split("\\.");
+        String[] partsOfGroupId = request.groupId().split("\\.");
 
         String pageObjectManagerPrompt = String.format("""
             Generate the file PageObjectManager.java inside package %1$s.%2$s.pages.
@@ -499,16 +510,16 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - The output must be parseable by Jackson ObjectMapper.readTree()
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, pageObjectManagerPrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), pageObjectManagerPrompt);
 
-        log.info("Risposta of the {} model to build the PageObjectManager: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString, pageObjectManagerPrompt);
+        log.info("Risposta of the {} model to build the PageObjectManager: {}", request.modelName(), responseCopilString);
+        return validateAndCleanJson(request, githubToken, responseCopilString, pageObjectManagerPrompt);
     }
 
-    private String buildDriverFactory() throws InterruptedException, ExecutionException{
+    private String buildDriverFactory(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building DriverFactory class...");
 
-        String [] partsOfGroupId = groupId.split("\\.");
+        String [] partsOfGroupId = request.groupId().split("\\.");
 
         String driverFactoryPrompt = String.format("""
             Generate the file DriverFactory.java inside package %1$s.%2$s.driver.
@@ -559,16 +570,16 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(modelName, driverFactoryPrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), driverFactoryPrompt);
 
-        log.info("Risposta of the {} model to build the DriverFactory: {}", modelName, responseCopilString);
-        return validateAndCleanJson(responseCopilString, driverFactoryPrompt);
+        log.info("Risposta of the {} model to build the DriverFactory: {}", request.modelName(), responseCopilString);
+        return validateAndCleanJson(request, githubToken, responseCopilString, driverFactoryPrompt);
     }
 
-    private String buildHooks() throws InterruptedException, ExecutionException{
+    private String buildHooks(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building Hooks class...");
 
-        String [] partsOfGroupId = groupId.split("\\.");
+        String [] partsOfGroupId = request.groupId().split("\\.");
 
         String hooksPrompt = String.format("""
             Generate the file Hooks.java inside package %1$s.%2$s.hooks.
@@ -621,16 +632,16 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, hooksPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), hooksPrompt);
 
-        log.info("Risposta of the {} model to build the hooks: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss, hooksPrompt);
+        log.info("Risposta of the {} model to build the hooks: {}", request.modelName(), responseAddGptOss);
+        return validateAndCleanJson(request, githubToken, responseAddGptOss, hooksPrompt);
     }
 
-    private String buildHooksInterface() throws InterruptedException, ExecutionException{
+    private String buildHooksInterface(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building HooksInterface...");
 
-        String [] partsOfGroupId = groupId.split("\\.");
+        String [] partsOfGroupId = request.groupId().split("\\.");
 
         String hooksInterfacePrompt = String.format("""
             Generate the file HooksInterface.java inside package %1$s.%2$s.hooks.
@@ -658,16 +669,16 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, hooksInterfacePrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), hooksInterfacePrompt);
 
-        log.info("Risposta of the {} model to build the HooksInterface: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss, hooksInterfacePrompt);
+        log.info("Risposta of the {} model to build the HooksInterface: {}", request.modelName(), responseAddGptOss);
+        return validateAndCleanJson(request, githubToken, responseAddGptOss, hooksInterfacePrompt);
     }
 
-    private String buildRunCucumberTest() throws InterruptedException, ExecutionException{
+    private String buildRunCucumberTest(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building TestRunner class...");
 
-        String [] partsOfGroupId = groupId.split("\\.");
+        String [] partsOfGroupId = request.groupId().split("\\.");
 
         String testRunnerPrompt = String.format("""
             Generate RunCucumberTest.java file.
@@ -696,15 +707,15 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - Single line JSON
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, testRunnerPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), testRunnerPrompt);
 
-        log.info("Risposta of the {} model to build the RunCucumberTest: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss, testRunnerPrompt);
+        log.info("Risposta of the {} model to build the RunCucumberTest: {}", request.modelName(), responseAddGptOss);
+        return validateAndCleanJson(request, githubToken, responseAddGptOss, testRunnerPrompt);
     }
 
-    private String buildTestContext() throws InterruptedException, ExecutionException{
+    private String buildTestContext(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building TestContext class...");
-        String [] partsOfGroupId = groupId.split("\\.");
+        String [] partsOfGroupId = request.groupId().split("\\.");
 
         String testContextPrompt = String.format("""
             Generate the file TestContext.java inside package %1$s.%2$s.utility.
@@ -805,16 +816,16 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - The output must be parseable by Jackson ObjectMapper.readTree()
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, testContextPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), testContextPrompt);
 
-        log.info("Risposta of the {} model to build the TestContext: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss, testContextPrompt);
+        log.info("Risposta of the {} model to build the TestContext: {}", request.modelName(), responseAddGptOss);
+        return validateAndCleanJson(request, githubToken, responseAddGptOss, testContextPrompt);
     }
 
-    private String buildLoginSteps() throws InterruptedException, ExecutionException{
+    private String buildLoginSteps(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building LoginSteps class...");
 
-        String [] partsOfGroupId = groupId.split("\\.");
+        String [] partsOfGroupId = request.groupId().split("\\.");
 
         String loginStepsPrompt = String.format("""
             Generate the file LoginSteps.java inside package %1$s.%2$s.steps.
@@ -944,13 +955,13 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - The output must be parseable by Jackson ObjectMapper.readTree()
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginStepsPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), loginStepsPrompt);
 
-        log.info("Risposta of the {} model to build the LoginSteps: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss, loginStepsPrompt);
+        log.info("Risposta of the {} model to build the LoginSteps: {}", request.modelName(), responseAddGptOss);
+        return validateAndCleanJson(request, githubToken, responseAddGptOss, loginStepsPrompt);
     }
 
-    private String buildLoginFeature() throws InterruptedException, ExecutionException{
+    private String buildLoginFeature(AutomationProjectRequest request, String githubToken) throws InterruptedException, ExecutionException{
         log.info("Building login.feature file...");
 
         String loginFeaturePrompt = String.format("""
@@ -976,10 +987,10 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - Output must be strictly valid JSON that can be parsed by com.fasterxml.jackson.databind.ObjectMapper.readTree().
         """);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(modelName, loginFeaturePrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), loginFeaturePrompt);
 
-        log.info("Risposta of the {} model to build the login.feature: {}", modelName, responseAddGptOss);
-        return validateAndCleanJson(responseAddGptOss, loginFeaturePrompt);
+        log.info("Risposta of the {} model to build the login.feature: {}", request.modelName(), responseAddGptOss);
+        return validateAndCleanJson(request, githubToken, responseAddGptOss, loginFeaturePrompt);
     }
 
 }

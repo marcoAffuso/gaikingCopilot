@@ -3,13 +3,16 @@ package it.nttdata.gaikingCopilot.controller;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.WebSession;
 
 import com.github.copilot.sdk.json.ModelInfo;
 import it.nttdata.gaikingCopilot.copilot.CopilotService;
+import it.nttdata.gaikingCopilot.copilot.GitHubTokenSessionService;
 import it.nttdata.gaikingCopilot.model.ModelCopilot;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -18,19 +21,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Log4j2
 @RestController
 @RequestMapping("/")
+@RequiredArgsConstructor
 public class CopilotController {
 
     private final CopilotService copilotService;
-
-
-    public CopilotController(CopilotService copilotService) {
-        this.copilotService = copilotService;
-    }
+    private final GitHubTokenSessionService gitHubTokenSessionService;
 
     @GetMapping("/getCopilotModels")
-    public List<ModelCopilot> getCopilotModels() throws InterruptedException, ExecutionException {
+    public List<ModelCopilot> getCopilotModels(WebSession session) throws InterruptedException, ExecutionException {
 
-        List<ModelInfo> models = copilotService.getCopilotModel();
+        String githubToken = gitHubTokenSessionService.getRequiredAccessToken(session);
+
+        List<ModelInfo> models = copilotService.getCopilotModel(githubToken);
         log.info("models {} ", models);
         return models.stream()
             .map(model -> new ModelCopilot(
@@ -45,19 +47,21 @@ public class CopilotController {
     }
 
     @GetMapping("/getTestCopilot")
-    public String getTestCopilot(@RequestParam String modelName, @RequestParam String prompt, @RequestParam String streaming) throws InterruptedException, ExecutionException{
+    public String getTestCopilot(
+        @RequestParam String modelName, 
+        @RequestParam String prompt, 
+        @RequestParam String streaming,
+        WebSession session
+    ) throws InterruptedException, ExecutionException{
         log.info("Received request with param: {}", modelName);
 
+        String githubToken = gitHubTokenSessionService.getRequiredAccessToken(session);
+
         return switch (streaming.toLowerCase()) {
-            case "true" -> copilotService.getResponseCopilotWithStreaming(modelName, prompt);
-            case "false" -> copilotService.getResponseCopilotWhitOutStreaming(modelName, prompt);
+            case "true" -> copilotService.getResponseCopilotWithStreaming(githubToken, modelName, prompt);
+            case "false" -> copilotService.getResponseCopilotWhitOutStreaming(githubToken, modelName, prompt);
             default -> throw new IllegalArgumentException("Invalid value for 'streaming' parameter. Expected 'true' or 'false'.");
         };
-    }
-
-
-    
-    
-    
+    }    
 
 }
