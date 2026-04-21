@@ -43,18 +43,6 @@ public class NewProjectController {
         WebSession session
     ) throws InterruptedException, ExecutionException {
 
-        // this.generateTAMavenSeleniumCucumberJunit.setModelName(model);
-        // this.generateTAMavenSeleniumCucumberJunit.setProjectName(projectName);
-        // this.generateTAMavenSeleniumCucumberJunit.setGroupId(groupId);
-        // this.generateTAMavenSeleniumCucumberJunit.setJavaVersion(javaVersion);
-        // this.generateTAMavenSeleniumCucumberJunit.setSeleniumVersion(seleniumVersion);
-        // this.generateTAMavenSeleniumCucumberJunit.setJunitVersion(junitVersion);
-        // this.generateTAMavenSeleniumCucumberJunit.setJunitPlatformVersion(junitPlatformVersion);
-        // this.generateTAMavenSeleniumCucumberJunit.setCucumberVersion(cucumberVersion);
-        // this.generateTAMavenSeleniumCucumberJunit.setWebdrivermanagerVersion(webdrivermanagerVersion);
-        // this.generateTAMavenSeleniumCucumberJunit.setSurefireVersion(surefireVersion);
-        // this.generateTAMavenSeleniumCucumberJunit.setCompilerPluginVersion(compilerPluginVersion);
-
         AutomationProjectRequest request = new AutomationProjectRequest(
                 model,
                 projectName,
