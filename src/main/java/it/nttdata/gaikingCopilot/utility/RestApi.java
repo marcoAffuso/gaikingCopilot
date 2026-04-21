@@ -10,6 +10,7 @@ import javax.net.ssl.SSLException;
 
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -224,6 +225,33 @@ public class RestApi {
             this.statusCode = responseEntity.getStatusCode().value();
             this.response = responseEntity.getBody();
         }
+    }
+
+    public void requestDeleteWithHeadersAndParameters(){
+        WebClient webClient = this.configureWebClient();
+        URI uri = queryParams != null
+                ? UriComponentsBuilder.fromUriString(this.url).queryParams(this.queryParams).build().toUri()
+                : UriComponentsBuilder.fromUriString(this.url).build().toUri();
+
+        ResponseEntity<String> responseEntity = webClient.method(HttpMethod.DELETE)
+                .uri(uri)
+                .headers(httpHeaders -> {
+                    if (headers != null) {
+                        httpHeaders.addAll(headers);
+                    }
+                    if (this.username != null && this.password != null) {
+                        httpHeaders.add(HttpHeaders.AUTHORIZATION, getBasicAuthHeader());
+                    }
+                })
+                .bodyValue(this.payload)
+                .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class))
+                .block();
+
+        if (responseEntity != null) {
+            this.statusCode = responseEntity.getStatusCode().value();
+            this.response = responseEntity.getBody();
+        }
+
     }
 
 

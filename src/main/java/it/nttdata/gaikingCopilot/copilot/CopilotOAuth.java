@@ -1,6 +1,7 @@
 package it.nttdata.gaikingCopilot.copilot;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -113,6 +114,38 @@ public class CopilotOAuth {
             log.error("Errore parsing risposta OAuth. status={}, body={}", oauthApi.getStatusCode(), oauthApi.getResponse(), ex);
             throw new IllegalStateException("Errore durante il parsing della risposta GitHub OAuth", ex);
         }
+    }
+
+
+    public void revokeApplicationGrant(String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            throw new IllegalArgumentException("GitHub access token mancante");
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.valueOf("application/vnd.github+json")));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add("X-GitHub-Api-Version", "2022-11-28");
+
+        String payload = this.readAndWriteJson.fromObjectToJsonString(Map.of("access_token", accessToken));        
+
+        RestApi revokeApi = new RestApi();
+        revokeApi.setUrl("https://api.github.com/applications/" + clientId + "/grant");
+        revokeApi.setHeaders(headers);
+        revokeApi.setQueryParams(new LinkedMultiValueMap<>());
+        revokeApi.setPayload(payload);
+        revokeApi.setUsername(clientId);
+        revokeApi.setPassword(clientSecret);
+        revokeApi.requestDeleteWithHeadersAndParameters();
+
+        if (revokeApi.getStatusCode() != 204) {
+            throw new IllegalStateException(
+                    "Revoca GitHub fallita. status=" + revokeApi.getStatusCode()
+                            + ", body=" + revokeApi.getResponse()
+            );
+        }
+
+        log.info("GitHub OAuth grant revocato correttamente");
     }
 
 }
