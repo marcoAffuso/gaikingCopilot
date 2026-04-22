@@ -22,7 +22,7 @@ import lombok.extern.log4j.Log4j2;
 @RequiredArgsConstructor
 public class CopilotOAuth {
 
-        private static final String GITHUB_DEVICE_CODE_URL = "https://github.com/login/device/code";
+    private static final String GITHUB_DEVICE_CODE_URL = "https://github.com/login/device/code";
     private static final String GITHUB_ACCESS_TOKEN_URL = "https://github.com/login/oauth/access_token";
     private static final String DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
     private static final int DEFAULT_POLL_INTERVAL_SECONDS = 5;

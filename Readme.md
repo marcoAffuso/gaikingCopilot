@@ -27,6 +27,6 @@ curl.exe --request GET `
 
   # Run api per il logout
   #bash
-  curl --request POST --cookie "SESSION=c05f0f29-9769-42dd-a4e9-9b962f5646a6" "http://localhost:8080/api/copilot/auth/logout"
+  curl --request POST --cookie "SESSION=1dfb1a64-c35e-4865-8709-a3c4533ea49f" "http://localhost:8080/api/copilot/auth/logout"
   # powershell
   curl.exe --request POST --cookie "SESSION=c05f0f29-9769-42dd-a4e9-9b962f5646a6" "http://localhost:8080/api/copilot/auth/logout" 
