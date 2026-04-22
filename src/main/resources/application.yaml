@@ -2,7 +2,7 @@ spring:
   application:
     name: gaikingCopilot
   config:
-    import: optional:classpath:githubProprieties.yml
+    import: optional:classpath:githubProprieties.yaml
 
 logging:
   file:

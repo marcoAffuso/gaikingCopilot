@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,6 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 @Service
 @RequiredArgsConstructor
-@PropertySource("file:src/main/resources/githubProprieties.yml")
 public class CopilotOAuth {
 
     @Value("${github.oauth.client-id}")
