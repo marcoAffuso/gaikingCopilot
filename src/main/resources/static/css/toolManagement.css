@@ -152,6 +152,60 @@ body {
 	font-size: 1.1rem;
 }
 
+@media (max-width: 1128px) {
+	.navbar-content {
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.85rem 1rem;
+		min-height: auto;
+		padding: 0.85rem 1.25rem;
+	}
+
+	.nav-left-group {
+		position: static;
+		transform: none;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.brand-sequence {
+		position: static;
+		left: auto;
+		top: auto;
+		transform: none;
+		flex: 0 1 100%;
+		min-height: auto;
+	}
+
+	.brand-logo {
+		height: 56px;
+	}
+
+	.gaiking-logo {
+		height: 72px;
+		padding: 3px;
+	}
+
+	.brand-title {
+		font-size: 1.8rem;
+		letter-spacing: 1.1px;
+	}
+
+	.page-label {
+		font-size: 1.15rem;
+		padding: 0.6rem 1rem;
+	}
+
+	.home-button,
+	.logout-button {
+		position: static;
+		transform: none;
+		min-height: 74px;
+		padding: 0 1.25rem;
+	}
+}
+
 @media (max-width: 576px) {
 	.navbar-content {
 	    flex-direction: column;
