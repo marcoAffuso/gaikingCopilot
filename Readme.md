@@ -12,7 +12,7 @@ java -jar target\gaikingCopilot-0.0.1-SNAPSHOT.jar
 
 Aprire la devtool del browser, andare in Applicazione -> Store -> Cookies -> http://localhost:8080 
 recuperare il valore di SESSION e inserirlo nella curl: 
-curl.exe --cookie "SESSION=c05f0f29-9769-42dd-a4e9-9b962f5646a6" "http://localhost:8080/getCopilotModels"
+curl.exe --cookie "SESSION=1529a66c-5ed5-45b0-a71d-3b47eadf309e" "http://localhost:8080/getCopilotModels"
 
 # Run api newProject/mvn_selenium_junit5_cucumber
 # con bash
@@ -33,4 +33,4 @@ curl.exe --request GET `
   curl.exe --request POST --cookie "SESSION=c05f0f29-9769-42dd-a4e9-9b962f5646a6" "http://localhost:8080/api/copilot/auth/logout"
 
   # Per la logout
-  inserire nel browser il seguente indirizzo :  http://localhost:8080//logout" 
+  inserire nel browser il seguente indirizzo :  http://localhost:8080/logout" 
