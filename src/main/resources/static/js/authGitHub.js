@@ -203,6 +203,10 @@ async function checkStatus() {
             'authorized',
             data.message || 'Autenticazione GitHub completata correttamente.'
         );
+        const homeBox = document.getElementById('homeBox');
+        if (homeBox) {
+            homeBox.classList.remove('hidden');
+        }
         return;
     }
 

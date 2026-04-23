@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 public class AppSessionPageController {
 
+
+
     @GetMapping("/logout")
     public String logoutPage() {
         return "logout";

@@ -34,3 +34,6 @@ curl.exe --request GET `
 
   # Per la logout
   inserire nel browser il seguente indirizzo :  http://localhost:8080/logout" 
+
+  # Per la homePage
+  http://localhost:8080/homePage
