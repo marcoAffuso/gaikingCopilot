@@ -26,6 +26,12 @@ public class NewProjectController {
     private final GenerateTAMavenSeleniumCucumberJunit generateTAMavenSeleniumCucumberJunit;
     private final GitHubTokenSessionService gitHubTokenSessionService;
 
+    @GetMapping("/newProject/gradle_selenium_junit5_cucumber")
+    public Map<String, String> getMethodName() {
+        return Map.of("message", "Progetto generato con successo! Controlla i log per i dettagli.");
+    }
+    
+
 
     @GetMapping("/newProject/mvn_selenium_junit5_cucumber")
     public Map<String, String> getMethodName(

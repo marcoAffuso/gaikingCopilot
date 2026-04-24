@@ -88,9 +88,109 @@
 					</div>
 					<div class="modal-body language-modal-body">
 						<div class="language-buttons">
-							<button id="javaLanguageBtn" type="button" class="btn action-button language-button language-button-java">Java</button>
+							<button id="javaLanguageBtn" type="button" class="btn action-button language-button language-button-java" data-bs-target="#packageManagerModal" data-bs-toggle="modal">Java</button>
 							<button id="pythonLanguageBtn" type="button" class="btn action-button language-button language-button-python">Python</button>
 						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="packageManagerModal" tabindex="-1" aria-labelledby="packageManagerModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content language-modal-content">
+					<div class="modal-header language-modal-header">
+						<button type="button" class="btn modal-back-button" data-bs-target="#languageSelectionModal" data-bs-toggle="modal">Back</button>
+						<h2 class="modal-title language-modal-title" id="packageManagerModalLabel">Package Manager</h2>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body language-modal-body">
+						<div class="language-buttons">
+							<button id="mavenBtn" type="button" class="btn action-button language-button package-manager-button-maven" data-bs-target="#testFrameworkModal" data-bs-toggle="modal">Maven</button>
+							<button id="gradleBtn" type="button" class="btn action-button language-button package-manager-button-gradle" data-bs-target="#testFrameworkModal" data-bs-toggle="modal">Gradle</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="testFrameworkModal" tabindex="-1" aria-labelledby="testFrameworkModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content language-modal-content">
+					<div class="modal-header language-modal-header">
+						<button type="button" class="btn modal-back-button" data-bs-target="#packageManagerModal" data-bs-toggle="modal">Back</button>
+						<h2 class="modal-title language-modal-title" id="testFrameworkModalLabel">Test Framework</h2>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body language-modal-body">
+						<div class="language-buttons">
+							<button id="junitBtn" type="button" class="btn action-button language-button test-framework-button-junit" data-bs-target="#junitConfigurationModal" data-bs-toggle="modal">JUnit</button>
+							<button id="testngBtn" type="button" class="btn action-button language-button test-framework-button-testng">TestNG</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="junitConfigurationModal" tabindex="-1" aria-labelledby="junitConfigurationModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+				<div class="modal-content language-modal-content">
+					<div class="modal-header language-modal-header">
+						<button type="button" class="btn modal-back-button" data-bs-target="#testFrameworkModal" data-bs-toggle="modal">Back</button>
+						<h2 class="modal-title language-modal-title" id="junitConfigurationModalLabel">JUnit Configuration</h2>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body language-modal-body">
+						<form class="configuration-form" method="get">
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="model">Model LLM</label>
+								<input class="form-control configuration-form-input" id="model" name="model" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="projectName">Project Name</label>
+								<input class="form-control configuration-form-input" id="projectName" name="projectName" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="groupId">Group Id</label>
+								<input class="form-control configuration-form-input" id="groupId" name="groupId" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="javaVersion">Java Version</label>
+								<input class="form-control configuration-form-input" id="javaVersion" name="javaVersion" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="seleniumVersion">Selenium Version</label>
+								<input class="form-control configuration-form-input" id="seleniumVersion" name="seleniumVersion" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="junitVersion">Junit Version</label>
+								<input class="form-control configuration-form-input" id="junitVersion" name="junitVersion" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="junitPlatformVersion">Junit Platform Version</label>
+								<input class="form-control configuration-form-input" id="junitPlatformVersion" name="junitPlatformVersion" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="cucumberVersion">Cucumber Version</label>
+								<input class="form-control configuration-form-input" id="cucumberVersion" name="cucumberVersion" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="webdrivermanagerVersion">Web Driver Manager Version</label>
+								<input class="form-control configuration-form-input" id="webdrivermanagerVersion" name="webdrivermanagerVersion" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="surefireVersion">Surefire Version</label>
+								<input class="form-control configuration-form-input" id="surefireVersion" name="surefireVersion" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="compilerPluginVersion">Compiler Plugin Version</label>
+								<input class="form-control configuration-form-input" id="compilerPluginVersion" name="compilerPluginVersion" type="text">
+							</div>
+							<div class="configuration-form-actions">
+								<button id="generateProjectMavenBtn" type="submit" class="btn configuration-submit-button configuration-submit-button-maven d-none" formaction="/newProject/mvn_selenium_junit5_cucumber">Generate Project Maven</button>
+								<button id="generateProjectGradleBtn" type="submit" class="btn configuration-submit-button configuration-submit-button-gradle d-none" formaction="/newProject/gradle_selenium_junit5_cucumber">Generate Project Gradle</button>
+							</div>
+						</form>
 					</div>
 				</div>
 			</div>
@@ -113,6 +213,7 @@
 		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
 		integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
 		crossorigin="anonymous"></script>
+		<script th:src="@{/js/gestioneGenerateProjectButton.js}" src="/js/gestioneGenerateProjectButton.js"></script>
 
 	</body>
 </html>

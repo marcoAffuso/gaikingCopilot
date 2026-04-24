@@ -138,6 +138,28 @@ body {
 	gap: 1rem;
 }
 
+.modal-back-button {
+	position: absolute;
+	left: 1.25rem;
+	top: 50%;
+	transform: translateY(-50%);
+	border: 2px solid #1f2a44;
+	border-radius: 999px;
+	padding: 0.55rem 1.35rem;
+	margin: 0;
+	font-weight: 700;
+	background-color: #ffffff;
+	color: #1f2a44;
+	box-shadow: 0 4px 10px rgba(31, 42, 68, 0.14);
+}
+
+.modal-back-button:hover,
+.modal-back-button:focus {
+	background-color: #eef4ff;
+	border-color: #16304f;
+	color: #16304f;
+}
+
 .language-button {
 	min-height: 90px;
 	font-size: 1.1rem;
@@ -167,6 +189,131 @@ body {
 	background-color: #ffe8c2;
 	border-color: #a96300;
 	color: #8a4b00;
+}
+
+.package-manager-button-maven {
+	background-color: #e6efff;
+	border-color: #2f5fbf;
+	color: #1f3f8f;
+}
+
+.package-manager-button-maven:hover,
+.package-manager-button-maven:focus {
+	background-color: #d7e5ff;
+	border-color: #274f9f;
+	color: #1f3f8f;
+}
+
+.package-manager-button-gradle {
+	background-color: #f7e8ff;
+	border-color: #7c3aed;
+	color: #5b21b6;
+}
+
+.package-manager-button-gradle:hover,
+.package-manager-button-gradle:focus {
+	background-color: #f0dbff;
+	border-color: #6d28d9;
+	color: #5b21b6;
+}
+
+.test-framework-button-junit {
+	background-color: #e8f7ef;
+	border-color: #1f7a4c;
+	color: #14532d;
+}
+
+.test-framework-button-junit:hover,
+.test-framework-button-junit:focus {
+	background-color: #d7f0e3;
+	border-color: #17643e;
+	color: #14532d;
+}
+
+.test-framework-button-testng {
+	background-color: #fff2db;
+	border-color: #c77700;
+	color: #8a4b00;
+}
+
+.test-framework-button-testng:hover,
+.test-framework-button-testng:focus {
+	background-color: #ffe8c2;
+	border-color: #a96300;
+	color: #8a4b00;
+}
+
+.configuration-form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.95rem;
+	padding-top: 0.25rem;
+}
+
+.configuration-form-row {
+	display: grid;
+	grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+	gap: 1rem;
+	align-items: center;
+}
+
+.configuration-form-label {
+	font-weight: 700;
+	color: #1f2a44;
+	margin: 0;
+	text-align: left;
+}
+
+.configuration-form-input {
+	min-height: 46px;
+	border: 2px solid #c7d2e5;
+	border-radius: 12px;
+	box-shadow: inset 0 1px 2px rgba(31, 42, 68, 0.08);
+}
+
+.configuration-form-input:focus {
+	border-color: #2f5fbf;
+	box-shadow: 0 0 0 0.2rem rgba(47, 95, 191, 0.16);
+}
+
+.configuration-form-actions {
+	display: flex;
+	justify-content: center;
+	margin-top: 0.75rem;
+}
+
+.configuration-submit-button {
+	min-height: 52px;
+	padding: 0.75rem 1.5rem;
+	border-radius: 999px;
+	font-weight: 700;
+	box-shadow: 0 6px 14px rgba(31, 42, 68, 0.14);
+}
+
+.configuration-submit-button-maven {
+	background-color: #e6efff;
+	border: 2px solid #2f5fbf;
+	color: #1f3f8f;
+}
+
+.configuration-submit-button-maven:hover,
+.configuration-submit-button-maven:focus {
+	background-color: #d7e5ff;
+	border-color: #274f9f;
+	color: #1f3f8f;
+}
+
+.configuration-submit-button-gradle {
+	background-color: #f7e8ff;
+	border: 2px solid #7c3aed;
+	color: #5b21b6;
+}
+
+.configuration-submit-button-gradle:hover,
+.configuration-submit-button-gradle:focus {
+	background-color: #f0dbff;
+	border-color: #6d28d9;
+	color: #5b21b6;
 }
 
 .action-button {
@@ -466,6 +613,19 @@ body {
 
 	.action-buttons {
 		grid-template-columns: 1fr;
+	}
+
+	.configuration-form-row {
+		grid-template-columns: 1fr;
+		gap: 0.45rem;
+	}
+
+	.configuration-form-actions {
+		justify-content: stretch;
+	}
+
+	.configuration-submit-button {
+		width: 100%;
 	}
 
 	.language-buttons {
