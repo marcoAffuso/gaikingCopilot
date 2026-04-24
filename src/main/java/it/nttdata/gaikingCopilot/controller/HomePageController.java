@@ -32,14 +32,14 @@ public class HomePageController {
 
     @GetMapping("/homePage/createNewProjectTa")
     public String createNewProjectTa(WebSession session) {
-        if (session == null || session.isExpired()) {
-            return LOGIN_REDIRECT;
-        }
+        // if (session == null || session.isExpired()) {
+        //     return LOGIN_REDIRECT;
+        // }
 
-        String token = gitHubTokenSessionService.getOptionalAccessToken(session);
-        if (token == null || token.isBlank()) {
-            return LOGIN_REDIRECT;
-        }
+        // String token = gitHubTokenSessionService.getOptionalAccessToken(session);
+        // if (token == null || token.isBlank()) {
+        //     return LOGIN_REDIRECT;
+        // }
         return "createNewProjectTa";
     }
 
