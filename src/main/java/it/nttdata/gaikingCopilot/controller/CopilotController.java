@@ -5,6 +5,7 @@ import java.util.concurrent.ExecutionException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,13 +29,19 @@ public class CopilotController {
     private final GitHubTokenSessionService gitHubTokenSessionService;
 
     @GetMapping("/getCopilotModels")
-    public List<ModelCopilot> getCopilotModels(WebSession session) throws InterruptedException, ExecutionException {
+    public ResponseEntity<List<ModelCopilot>> getCopilotModels(WebSession session) throws InterruptedException, ExecutionException {
+        if (session == null || session.isExpired()) {
+            return ResponseEntity.status(401).build();
+        }
 
-        String githubToken = gitHubTokenSessionService.getRequiredAccessToken(session);
+        String githubToken = gitHubTokenSessionService.getOptionalAccessToken(session);
+        if (githubToken == null || githubToken.isBlank()) {
+            return ResponseEntity.status(401).build();
+        }
 
         List<ModelInfo> models = copilotService.getCopilotModel(githubToken);
         log.info("models {} ", models);
-        return models.stream()
+        List<ModelCopilot> response = models.stream()
             .map(model -> new ModelCopilot(
                 model.getId(),
                 model.getName(),
@@ -44,6 +51,8 @@ public class CopilotController {
                     && model.getCapabilities().getSupports().isReasoningEffort()
             ))
                 .toList();
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/getTestCopilot")

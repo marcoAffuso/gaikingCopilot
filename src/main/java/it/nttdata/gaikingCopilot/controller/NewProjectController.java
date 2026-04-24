@@ -27,14 +27,36 @@ public class NewProjectController {
     private final GitHubTokenSessionService gitHubTokenSessionService;
 
     @GetMapping("/newProject/gradle_selenium_junit5_cucumber")
-    public Map<String, String> getMethodName() {
+    public Map<String, String> gradleSeleniumJunit5Cucumber(
+        @RequestParam String model, 
+        @RequestParam String projectName,
+        @RequestParam String groupId,
+        @RequestParam String javaVersion,
+        @RequestParam String seleniumVersion,
+        @RequestParam String junitVersion,
+        @RequestParam String junitPlatformVersion,
+        @RequestParam String cucumberVersion,
+        @RequestParam String webdrivermanagerVersion,
+        @RequestParam String surefireVersion,
+        @RequestParam String compilerPluginVersion,
+        WebSession session
+    ) {
+        if (session == null || session.isExpired()) {
+            return Map.of("message", "Sessione scaduta. Effettua il login.");
+        }
+
+        String token = gitHubTokenSessionService.getOptionalAccessToken(session);
+        if (token == null || token.isBlank()) {
+            return Map.of("message", "Token GitHub non disponibile. Effettua il login.");
+        }
+
         return Map.of("message", "Progetto generato con successo! Controlla i log per i dettagli.");
     }
     
 
 
     @GetMapping("/newProject/mvn_selenium_junit5_cucumber")
-    public Map<String, String> getMethodName(
+    public Map<String, String> mavenSeleniumJunit5Cucumber(
         @RequestParam String model, 
         @RequestParam String projectName,
         @RequestParam String groupId,
@@ -64,8 +86,6 @@ public class NewProjectController {
         );
 
         String githubToken = gitHubTokenSessionService.getRequiredAccessToken(session);
-
-
         
         this.generateTAMavenSeleniumCucumberJunit.generateAutomationJavaSeleniumCucumberProject(request, githubToken);
 

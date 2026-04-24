@@ -133,7 +133,7 @@
 		</div>
 
 		<div class="modal fade" id="junitConfigurationModal" tabindex="-1" aria-labelledby="junitConfigurationModalLabel" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+			<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable junit-configuration-dialog">
 				<div class="modal-content language-modal-content">
 					<div class="modal-header language-modal-header">
 						<button type="button" class="btn modal-back-button" data-bs-target="#testFrameworkModal" data-bs-toggle="modal">Back</button>
@@ -141,10 +141,13 @@
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
 					<div class="modal-body language-modal-body">
-						<form class="configuration-form" method="get">
+						<form id="junitConfigurationForm" class="configuration-form" method="get">
 							<div class="configuration-form-row">
 								<label class="configuration-form-label" for="model">Model LLM</label>
-								<input class="form-control configuration-form-input" id="model" name="model" type="text">
+								<div class="configuration-form-inline-field">
+									<input class="form-control configuration-form-input" id="model" name="model" type="text" readonly>
+									<button id="getModelLlmBtn" type="button" class="btn configuration-secondary-button" data-bs-toggle="modal" data-bs-target="#modelSelectionModal">Get Model LLM</button>
+								</div>
 							</div>
 							<div class="configuration-form-row">
 								<label class="configuration-form-label" for="projectName">Project Name</label>
@@ -196,6 +199,21 @@
 			</div>
 		</div>
 
+		<div class="modal fade" id="modelSelectionModal" tabindex="-1" aria-labelledby="modelSelectionModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+				<div class="modal-content language-modal-content">
+					<div class="modal-header language-modal-header">
+						<h2 class="modal-title language-modal-title" id="modelSelectionModalLabel">Model LLM</h2>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body language-modal-body">
+						<div id="modelSelectionStatus" class="model-selection-status">Loading available models...</div>
+						<div id="modelSelectionList" class="model-selection-list d-none"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<footer id="footer" class="footer py-2 bg-light page-footer">
 			<div class="container">
 				<div class="d-flex align-items-center justify-content-center footer-content">
@@ -214,6 +232,7 @@
 		integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
 		crossorigin="anonymous"></script>
 		<script th:src="@{/js/gestioneGenerateProjectButton.js}" src="/js/gestioneGenerateProjectButton.js"></script>
+		<script th:src="@{/js/getInfoModelLLM.js}" src="/js/getInfoModelLLM.js"></script>
 
 	</body>
 </html>
