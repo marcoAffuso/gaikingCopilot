@@ -84,16 +84,65 @@ body {
 	border-radius: 12px;
 	background: rgba(255, 255, 255, 0.72);
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	padding: 1rem;
 	text-align: center;
+	gap: 0.9rem;
 }
 
 .generated-project-text {
 	font-size: 1rem;
 	font-weight: 600;
 	color: #42526e;
+}
+
+.generated-project-name {
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: #1f2a44;
+}
+
+.generated-project-actions {
+	display: flex;
+	justify-content: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.generated-project-button {
+	min-height: 46px;
+	padding: 0.65rem 1.35rem;
+	border-radius: 999px;
+	font-weight: 700;
+	box-shadow: 0 4px 10px rgba(31, 42, 68, 0.14);
+}
+
+.generated-project-button-download {
+	background-color: #e6efff;
+	border: 2px solid #2f5fbf;
+	color: #1f3f8f;
+}
+
+.generated-project-button-download:hover,
+.generated-project-button-download:focus {
+	background-color: #d7e5ff;
+	border-color: #274f9f;
+	color: #1f3f8f;
+}
+
+.generated-project-button-delete {
+	background-color: #ffe7e9;
+	border: 2px solid #dc3545;
+	color: #a61d2a;
+}
+
+.generated-project-button-delete:hover,
+.generated-project-button-delete:focus {
+	background-color: #ffd6da;
+	border-color: #bb2d3b;
+	color: #8f1722;
 }
 
 .language-modal-content {
@@ -744,6 +793,14 @@ body {
 	}
 
 	.model-selection-button {
+		width: 100%;
+	}
+
+	.generated-project-actions {
+		flex-direction: column;
+	}
+
+	.generated-project-button {
 		width: 100%;
 	}
 

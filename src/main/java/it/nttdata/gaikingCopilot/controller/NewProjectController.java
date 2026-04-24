@@ -1,5 +1,10 @@
 package it.nttdata.gaikingCopilot.controller;
 
+import java.io.IOException;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -8,13 +13,20 @@ import org.springframework.web.server.WebSession;
 import it.nttdata.gaikingCopilot.ai.GenerateTAMavenSeleniumCucumberJunit;
 import it.nttdata.gaikingCopilot.copilot.GitHubTokenSessionService;
 import it.nttdata.gaikingCopilot.model.AutomationProjectRequest;
+import it.nttdata.gaikingCopilot.utility.OperationOnFileSystem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+
 
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 
 @Log4j2
@@ -22,6 +34,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RequestMapping("/")
 @RequiredArgsConstructor
 public class NewProjectController {
+
+    private static final String MESSAGE_KEY = "message";
 
     private final GenerateTAMavenSeleniumCucumberJunit generateTAMavenSeleniumCucumberJunit;
     private final GitHubTokenSessionService gitHubTokenSessionService;
@@ -42,15 +56,18 @@ public class NewProjectController {
         WebSession session
     ) {
         if (session == null || session.isExpired()) {
-            return Map.of("message", "Sessione scaduta. Effettua il login.");
+            return Map.of(MESSAGE_KEY, "Sessione scaduta. Effettua il login.");
         }
 
         String token = gitHubTokenSessionService.getOptionalAccessToken(session);
         if (token == null || token.isBlank()) {
-            return Map.of("message", "Token GitHub non disponibile. Effettua il login.");
+            return Map.of(MESSAGE_KEY, "Token GitHub non disponibile. Effettua il login.");
         }
 
-        return Map.of("message", "Progetto generato con successo! Controlla i log per i dettagli.");
+        return Map.of(
+            MESSAGE_KEY, "Project generated successfully.",
+            "projectName", projectName
+        );
     }
     
 
@@ -91,8 +108,65 @@ public class NewProjectController {
 
         log.info("Project generation completed successfully for project: {}", projectName);
 
-        return Map.of("message", "Progetto generato con successo! Controlla i log per i dettagli.");
+        return Map.of(
+            MESSAGE_KEY, "Project generated successfully.",
+            "projectName", projectName
+        );
     }
-    
+
+    @GetMapping("/newProject/download")
+    public ResponseEntity<ByteArrayResource> downloadProject(
+        @RequestParam String projectName,
+        WebSession session
+    ) throws IOException {
+        if (session == null || session.isExpired()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        String token = gitHubTokenSessionService.getOptionalAccessToken(session);
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Path projectPath = Path.of(projectName);
+        if (!Files.exists(projectPath) || !Files.isDirectory(projectPath)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        OperationOnFileSystem operationOnFileSystem = new OperationOnFileSystem();
+
+        byte[] zipContent = operationOnFileSystem.zipProjectDirectory(projectPath);
+        ByteArrayResource resource = new ByteArrayResource(zipContent);
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + projectName + ".zip\"")
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .contentLength(zipContent.length)
+            .body(resource);
+    }
+
+    @DeleteMapping("/newProject/delete")
+    public ResponseEntity<Map<String, String>> deleteProject(
+        @RequestParam String projectName,
+        WebSession session
+    ) throws IOException {
+        if (session == null || session.isExpired()) {
+            return ResponseEntity.status(401).build();
+        }       
+
+        String token = gitHubTokenSessionService.getOptionalAccessToken(session);
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Path projectPath = Path.of(projectName);
+        if (!Files.exists(projectPath)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        OperationOnFileSystem operationOnFileSystem = new OperationOnFileSystem();
+        operationOnFileSystem.deleteProjectDirectory(projectPath);
+        return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Project deleted successfully."));
+    }
 
 }
