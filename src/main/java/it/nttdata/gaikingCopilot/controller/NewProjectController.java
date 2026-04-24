@@ -40,6 +40,9 @@ public class NewProjectController {
     private final GenerateTAMavenSeleniumCucumberJunit generateTAMavenSeleniumCucumberJunit;
     private final GitHubTokenSessionService gitHubTokenSessionService;
 
+    private static final String PROJECT_BASE_PATH_GRADLE = "newProject/selenium/java/gradle/junit/";
+    private static final String PROJECT_BASE_PATH_MAVEN = "newProject/selenium/java/maven/junit/";
+
     @GetMapping("/newProject/gradle_selenium_junit5_cucumber")
     public Map<String, String> gradleSeleniumJunit5Cucumber(
         @RequestParam String model, 
@@ -66,7 +69,7 @@ public class NewProjectController {
 
         return Map.of(
             MESSAGE_KEY, "Project generated successfully.",
-            "projectName", projectName
+            "projectName", PROJECT_BASE_PATH_GRADLE + projectName
         );
     }
     
@@ -90,7 +93,7 @@ public class NewProjectController {
 
         AutomationProjectRequest request = new AutomationProjectRequest(
                 model,
-                projectName,
+                PROJECT_BASE_PATH_MAVEN + projectName,
                 groupId,
                 javaVersion,
                 seleniumVersion,
@@ -110,7 +113,7 @@ public class NewProjectController {
 
         return Map.of(
             MESSAGE_KEY, "Project generated successfully.",
-            "projectName", projectName
+            "projectName", PROJECT_BASE_PATH_MAVEN + projectName
         );
     }
 
