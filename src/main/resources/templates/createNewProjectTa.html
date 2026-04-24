@@ -62,7 +62,7 @@
 						<div class="action-box">
 							<h2 class="action-box-title">Framework Selection</h2>
 							<div class="action-buttons">
-								<button id="seleniumBtn" type="button" class="btn action-button action-button-selenium">Selenium</button>
+								<button id="seleniumBtn" type="button" class="btn action-button action-button-selenium" data-bs-toggle="modal" data-bs-target="#languageSelectionModal">Selenium</button>
 								<button id="playwrightBtn" type="button" class="btn action-button action-button-playwright">Playwright</button>
 								<button id="cypressBtn" type="button" class="btn action-button action-button-cypress">Cypress</button>
 								<button id="robotframeworkBtn" type="button" class="btn action-button action-button-robot">Robot Framework</button>
@@ -78,6 +78,23 @@
 				</div>
 			</div>
 		</section>
+
+		<div class="modal fade" id="languageSelectionModal" tabindex="-1" aria-labelledby="languageSelectionModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content language-modal-content">
+					<div class="modal-header language-modal-header">
+						<h2 class="modal-title language-modal-title" id="languageSelectionModalLabel">Language</h2>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body language-modal-body">
+						<div class="language-buttons">
+							<button id="javaLanguageBtn" type="button" class="btn action-button language-button language-button-java">Java</button>
+							<button id="pythonLanguageBtn" type="button" class="btn action-button language-button language-button-python">Python</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 
 		<footer id="footer" class="footer py-2 bg-light page-footer">
 			<div class="container">
