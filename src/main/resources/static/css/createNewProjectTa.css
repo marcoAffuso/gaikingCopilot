@@ -41,6 +41,95 @@ body {
 	flex: 1 0 auto;
 }
 
+.action-box {
+	width: min(100%, 760px);
+	padding: 1.5rem;
+	border: 3px solid #1f2a44;
+	border-radius: 14px;
+	background: linear-gradient(90deg, #f4f7fb 0%, #eef4ff 100%);
+	box-shadow: 0 6px 18px rgba(31, 42, 68, 0.18);
+}
+
+.action-box-title {
+	margin-bottom: 1.25rem;
+	font-family: "Bebas Neue", sans-serif;
+	font-size: 2rem;
+	letter-spacing: 1.2px;
+	color: #1f2a44;
+	text-align: center;
+}
+
+.action-buttons {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+}
+
+.action-button {
+	min-height: 82px;
+	border-radius: 12px;
+	border: 2px solid transparent;
+	font-weight: 700;
+	box-shadow: 0 6px 14px rgba(31, 42, 68, 0.14);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	text-decoration: none;
+}
+
+.action-button-selenium {
+	background-color: #e8f7ef;
+	border-color: #1f7a4c;
+	color: #14532d;
+}
+
+.action-button-selenium:hover,
+.action-button-selenium:focus {
+	background-color: #d7f0e3;
+	border-color: #17643e;
+	color: #14532d;
+}
+
+.action-button-playwright {
+	background-color: #fff2db;
+	border-color: #c77700;
+	color: #8a4b00;
+}
+
+.action-button-playwright:hover,
+.action-button-playwright:focus {
+	background-color: #ffe8c2;
+	border-color: #a96300;
+	color: #8a4b00;
+}
+
+.action-button-cypress {
+	background-color: #e6efff;
+	border-color: #2f5fbf;
+	color: #1f3f8f;
+}
+
+.action-button-cypress:hover,
+.action-button-cypress:focus {
+	background-color: #d7e5ff;
+	border-color: #274f9f;
+	color: #1f3f8f;
+}
+
+.action-button-robot {
+	background-color: #f7e8ff;
+	border-color: #7c3aed;
+	color: #5b21b6;
+}
+
+.action-button-robot:hover,
+.action-button-robot:focus {
+	background-color: #f0dbff;
+	border-color: #6d28d9;
+	color: #5b21b6;
+}
+
 .page-label {
 	padding: 0.65rem 1.2rem;
 	border: 2px solid #1f2a44;
@@ -197,6 +286,15 @@ body {
 		padding: 0.6rem 1rem;
 	}
 
+	.action-box {
+		width: min(100%, 860px);
+		padding: 1.25rem;
+	}
+
+	.action-box-title {
+		font-size: 1.8rem;
+	}
+
 	.home-button,
 	.logout-button {
 		position: static;
@@ -244,6 +342,18 @@ body {
 	.page-label {
 		font-size: 1.1rem;
 		padding: 0.65rem 1rem;
+	}
+
+	.action-box {
+		padding: 1rem;
+	}
+
+	.action-box-title {
+		font-size: 1.6rem;
+	}
+
+	.action-buttons {
+		grid-template-columns: 1fr;
 	}
 
 	.home-button {
