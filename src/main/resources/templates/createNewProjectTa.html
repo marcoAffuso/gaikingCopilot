@@ -231,6 +231,40 @@
 			</div>
 		</div>
 
+		<div class="modal fade" id="createGitProjectModal" tabindex="-1" aria-labelledby="createGitProjectModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content language-modal-content">
+					<div class="modal-header language-modal-header">
+						<h2 class="modal-title language-modal-title" id="createGitProjectModalLabel">Create Git Project</h2>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body language-modal-body">
+						<form id="createGitProjectForm" class="configuration-form" method="get">
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="createGitProjectName">Project Name</label>
+								<input class="form-control configuration-form-input" id="createGitProjectName" name="createGitProjectName" type="text" readonly>
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="createGitUser">User Git</label>
+								<input class="form-control configuration-form-input" id="createGitUser" name="createGitUser" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="createGitPassword">Password</label>
+								<input class="form-control configuration-form-input" id="createGitPassword" name="createGitPassword" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="createGitToken">Token</label>
+								<input class="form-control configuration-form-input" id="createGitToken" name="createGitToken" type="text">
+							</div>
+							<div class="configuration-form-actions">
+								<button id="createGitProjectSubmitBtn" type="button" class="btn configuration-submit-button configuration-submit-button-maven">Create Git Project</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<footer id="footer" class="footer py-2 bg-light page-footer">
 			<div class="container">
 				<div class="d-flex align-items-center justify-content-center footer-content">

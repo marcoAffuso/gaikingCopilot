@@ -11,13 +11,15 @@
 	const generatedProjectText = document.getElementById("generatedProjectText");
 	const projectNameInput = document.getElementById("projectName");
 	const groupIdInput = document.getElementById("groupId");
+	const createGitProjectModal = document.getElementById("createGitProjectModal");
+	const createGitProjectName = document.getElementById("createGitProjectName");
 	const validationAlertOverlay = document.getElementById("validationAlertOverlay");
 	const validationAlertMessage = document.getElementById("validationAlertMessage");
 	const validationAlertCloseBtn = document.getElementById("validationAlertCloseBtn");
 	const validationAlertConfirmBtn = document.getElementById("validationAlertConfirmBtn");
 	let selectedPackageManager = "maven";
 
-	if (!junitConfigurationForm || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !generatedProjectPanel || !generatedProjectText || !projectNameInput || !groupIdInput || !validationAlertOverlay || !validationAlertMessage || !validationAlertCloseBtn || !validationAlertConfirmBtn) {
+	if (!junitConfigurationForm || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !generatedProjectPanel || !generatedProjectText || !projectNameInput || !groupIdInput || !createGitProjectModal || !createGitProjectName || !validationAlertOverlay || !validationAlertMessage || !validationAlertCloseBtn || !validationAlertConfirmBtn) {
 		return;
 	}
 
@@ -137,16 +139,50 @@
 		`);
 	};
 
+	const getDisplayProjectName = (projectPath) => projectPath.split(/[\\/]/).findLast(Boolean) ?? projectPath;
+
 	const showGeneratedProject = (projectName) => {
 		const encodedProjectName = encodeURIComponent(projectName);
+		const displayProjectName = getDisplayProjectName(projectName);
 		renderGeneratedProjectState(`
 			<p class="generated-project-text mb-0">Project created successfully.</p>
-			<p class="generated-project-name mb-0">${projectName}</p>
+			<p class="generated-project-name mb-0">${displayProjectName}</p>
 			<div class="generated-project-actions">
 				<a class="btn generated-project-button generated-project-button-download" href="/newProject/download?projectName=${encodedProjectName}">Download</a>
+				<button type="button" class="btn generated-project-button generated-project-button-create-git" data-project-name="${projectName}">Create Git Project</button>
 				<button type="button" class="btn generated-project-button generated-project-button-delete" data-project-name="${projectName}">Delete</button>
 			</div>
 		`);
+	};
+
+	const openCreateGitProjectModal = (projectName) => {
+		createGitProjectName.value = getDisplayProjectName(projectName);
+		const modalInstance = globalThis.bootstrap?.Modal.getOrCreateInstance(createGitProjectModal);
+		modalInstance?.show();
+	};
+
+	const handleDeleteProject = async (projectName) => {
+		try {
+			const response = await fetch(`/newProject/delete?projectName=${encodeURIComponent(projectName)}`, {
+				method: "DELETE",
+				headers: {
+					Accept: "application/json"
+				}
+			});
+
+			if (response.status === 401) {
+				globalThis.location.href = "/api/copilot/auth/login";
+				return;
+			}
+
+			if (!response.ok) {
+				throw new Error(`Unable to delete project (${response.status})`);
+			}
+
+			showProjectError("No project generated yet.");
+		} catch (error) {
+			showProjectError(error instanceof Error ? error.message : "Unable to delete project.");
+		}
 	};
 
 	mavenButton?.addEventListener("click", () => {
@@ -255,6 +291,17 @@
 			return;
 		}
 
+		const createGitButton = target.closest(".generated-project-button-create-git");
+		if (createGitButton instanceof HTMLButtonElement) {
+			const projectName = createGitButton.dataset.projectName;
+			if (!projectName) {
+				return;
+			}
+
+			openCreateGitProjectModal(projectName);
+			return;
+		}
+
 		const deleteButton = target.closest(".generated-project-button-delete");
 		if (!(deleteButton instanceof HTMLButtonElement)) {
 			return;
@@ -265,27 +312,7 @@
 			return;
 		}
 
-		try {
-			const response = await fetch(`/newProject/delete?projectName=${encodeURIComponent(projectName)}`, {
-				method: "DELETE",
-				headers: {
-					Accept: "application/json"
-				}
-			});
-
-			if (response.status === 401) {
-				globalThis.location.href = "/api/copilot/auth/login";
-				return;
-			}
-
-			if (!response.ok) {
-				throw new Error(`Unable to delete project (${response.status})`);
-			}
-
-			showProjectError("No project generated yet.");
-		} catch (error) {
-			showProjectError(error instanceof Error ? error.message : "Unable to delete project.");
-		}
+		await handleDeleteProject(projectName);
 	});
 
 	junitConfigurationModal?.addEventListener("show.bs.modal", updateGenerateButtons);

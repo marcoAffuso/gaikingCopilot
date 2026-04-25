@@ -132,6 +132,19 @@ body {
 	color: #1f3f8f;
 }
 
+.generated-project-button-create-git {
+	background-color: #e7f7ec;
+	border: 2px solid #198754;
+	color: #146c43;
+}
+
+.generated-project-button-create-git:hover,
+.generated-project-button-create-git:focus {
+	background-color: #d6f0df;
+	border-color: #146c43;
+	color: #115c39;
+}
+
 .generated-project-button-delete {
 	background-color: #ffe7e9;
 	border: 2px solid #dc3545;

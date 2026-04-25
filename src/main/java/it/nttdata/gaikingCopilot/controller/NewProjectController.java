@@ -178,4 +178,31 @@ public class NewProjectController {
         return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Project deleted successfully."));
     }
 
+    @GetMapping("/newProject/createProjectGit")
+    public ResponseEntity<Map<String, String>> createProjectGit(
+        @RequestParam String projectName,
+        WebSession session
+    ) throws IOException {
+        if (session == null || session.isExpired()) {
+            return ResponseEntity.status(401).body(Map.of(MESSAGE_KEY, "Sessione scaduta. Effettua il login."));
+        }       
+
+        String token = gitHubTokenSessionService.getOptionalAccessToken(session);
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Path projectPath = Path.of(projectName);
+        if (!Files.exists(projectPath)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        OperationOnFileSystem operationOnFileSystem = new OperationOnFileSystem();
+        operationOnFileSystem.createProjectGit(projectPath);
+        return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Project Git created successfully."));
+    }
+
+
+
+
 }
