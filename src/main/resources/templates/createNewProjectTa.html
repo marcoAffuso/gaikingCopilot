@@ -218,6 +218,19 @@
 			</div>
 		</div>
 
+		<div id="validationAlertOverlay" class="validation-alert-overlay d-none" role="alertdialog" aria-modal="true" aria-labelledby="validationAlertTitle" aria-hidden="true">
+			<div class="validation-alert-dialog language-modal-content">
+				<div class="modal-header language-modal-header">
+					<h2 class="modal-title language-modal-title" id="validationAlertTitle">Validation Error</h2>
+					<button id="validationAlertCloseBtn" type="button" class="btn-close" aria-label="Close"></button>
+				</div>
+				<div class="modal-body language-modal-body validation-alert-body">
+					<p id="validationAlertMessage" class="validation-alert-message mb-0">All fields must be filled in.</p>
+					<button id="validationAlertConfirmBtn" type="button" class="btn configuration-secondary-button validation-alert-button">OK</button>
+				</div>
+			</div>
+		</div>
+
 		<footer id="footer" class="footer py-2 bg-light page-footer">
 			<div class="container">
 				<div class="d-flex align-items-center justify-content-center footer-content">

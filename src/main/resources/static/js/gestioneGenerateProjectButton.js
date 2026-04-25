@@ -9,9 +9,15 @@
 	const generateProjectGradleBtn = document.getElementById("generateProjectGradleBtn");
 	const generatedProjectPanel = document.getElementById("generatedProjectPanel");
 	const generatedProjectText = document.getElementById("generatedProjectText");
+	const projectNameInput = document.getElementById("projectName");
+	const groupIdInput = document.getElementById("groupId");
+	const validationAlertOverlay = document.getElementById("validationAlertOverlay");
+	const validationAlertMessage = document.getElementById("validationAlertMessage");
+	const validationAlertCloseBtn = document.getElementById("validationAlertCloseBtn");
+	const validationAlertConfirmBtn = document.getElementById("validationAlertConfirmBtn");
 	let selectedPackageManager = "maven";
 
-	if (!junitConfigurationForm || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !generatedProjectPanel || !generatedProjectText) {
+	if (!junitConfigurationForm || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !generatedProjectPanel || !generatedProjectText || !projectNameInput || !groupIdInput || !validationAlertOverlay || !validationAlertMessage || !validationAlertCloseBtn || !validationAlertConfirmBtn) {
 		return;
 	}
 
@@ -23,6 +29,96 @@
 
 	const resetConfigurationForm = () => {
 		junitConfigurationForm.reset();
+	};
+
+	const hasEmptyConfigurationTextFields = () => {
+		const textInputs = junitConfigurationForm.querySelectorAll('input[type="text"]');
+
+		for (const textInput of textInputs) {
+			if (!(textInput instanceof HTMLInputElement)) {
+				continue;
+			}
+
+			if (textInput.value.trim() === "") {
+				textInput.focus();
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	const hasInvalidConfigurationTextFields = () => {
+		const editableTextInputs = junitConfigurationForm.querySelectorAll('input[type="text"]:not([readonly])');
+		const allowedValuePattern = /^[A-Za-z0-9._ -]+$/;
+
+		for (const textInput of editableTextInputs) {
+			if (!(textInput instanceof HTMLInputElement)) {
+				continue;
+			}
+
+			if (!allowedValuePattern.test(textInput.value.trim())) {
+				textInput.focus();
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	const hasNumericCharactersInRestrictedFields = () => {
+		if (/\d/.test(projectNameInput.value)) {
+			projectNameInput.focus();
+			return true;
+		}
+
+		return false;
+	};
+
+	const preventNumericCharacters = (textInput) => {
+		textInput.addEventListener("input", () => {
+			const sanitizedValue = textInput.value.replaceAll(/\d+/g, "");
+
+			if (sanitizedValue !== textInput.value) {
+				textInput.value = sanitizedValue;
+			}
+		});
+	};
+
+	const hasInvalidGroupIdFormat = () => {
+		const validGroupIdPattern = /^[A-Za-z]+\.[A-Za-z]+$/;
+
+		if (!validGroupIdPattern.test(groupIdInput.value.trim())) {
+			groupIdInput.focus();
+			return true;
+		}
+
+		return false;
+	};
+
+	const sanitizeGroupIdInput = () => {
+		groupIdInput.addEventListener("input", () => {
+			const lettersAndDotsOnly = groupIdInput.value.replaceAll(/[^A-Za-z.]+/g, "");
+			const singleDotValue = lettersAndDotsOnly
+				.replaceAll(/\.{2,}/g, ".")
+				.replaceAll(/\.(?=.*\.)/g, "");
+
+			if (singleDotValue !== groupIdInput.value) {
+				groupIdInput.value = singleDotValue;
+			}
+		});
+	};
+
+	const hideValidationAlert = () => {
+		validationAlertOverlay.classList.add("d-none");
+		validationAlertOverlay.setAttribute("aria-hidden", "true");
+	};
+
+	const showValidationAlert = (message) => {
+		validationAlertMessage.textContent = message;
+		validationAlertOverlay.classList.remove("d-none");
+		validationAlertOverlay.setAttribute("aria-hidden", "false");
+		validationAlertConfirmBtn.focus();
 	};
 
 	const renderGeneratedProjectState = (content) => {
@@ -63,6 +159,9 @@
 		updateGenerateButtons();
 	});
 
+	preventNumericCharacters(projectNameInput);
+	sanitizeGroupIdInput();
+
 	const submitConfigurationForm = async (event) => {
 		event.preventDefault();
 
@@ -73,6 +172,26 @@
 
 		const requestUrl = submitButton.getAttribute("formaction");
 		if (!requestUrl) {
+			return;
+		}
+
+		if (hasEmptyConfigurationTextFields()) {
+			showValidationAlert("All fields must be filled in.");
+			return;
+		}
+
+		if (hasInvalidConfigurationTextFields()) {
+			showValidationAlert("Special characters are not allowed in text fields.");
+			return;
+		}
+
+		if (hasNumericCharactersInRestrictedFields()) {
+			showValidationAlert("Project Name cannot contain numeric characters.");
+			return;
+		}
+
+		if (hasInvalidGroupIdFormat()) {
+			showValidationAlert("Group Id must use the format stringa1.stringa2 with letters only.");
 			return;
 		}
 
@@ -118,6 +237,18 @@
 	generateProjectGradleBtn.addEventListener("click", submitConfigurationForm);
 	junitConfigurationBackButton?.addEventListener("click", resetConfigurationForm);
 	junitConfigurationCloseButton?.addEventListener("click", resetConfigurationForm);
+	validationAlertCloseBtn.addEventListener("click", hideValidationAlert);
+	validationAlertConfirmBtn.addEventListener("click", hideValidationAlert);
+	validationAlertOverlay.addEventListener("click", (event) => {
+		if (event.target === validationAlertOverlay) {
+			hideValidationAlert();
+		}
+	});
+	globalThis.addEventListener("keydown", (event) => {
+		if (event.key === "Escape" && !validationAlertOverlay.classList.contains("d-none")) {
+			hideValidationAlert();
+		}
+	});
 	generatedProjectPanel.addEventListener("click", async (event) => {
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) {
