@@ -3,6 +3,7 @@
 	const gradleButton = document.getElementById("gradleBtn");
 	const junitConfigurationModal = document.getElementById("junitConfigurationModal");
 	const junitConfigurationForm = document.getElementById("junitConfigurationForm");
+	const junitConfigurationBackButton = junitConfigurationModal?.querySelector(".modal-back-button");
 	const junitConfigurationCloseButton = junitConfigurationModal?.querySelector(".btn-close");
 	const generateProjectMavenBtn = document.getElementById("generateProjectMavenBtn");
 	const generateProjectGradleBtn = document.getElementById("generateProjectGradleBtn");
@@ -115,6 +116,7 @@
 
 	generateProjectMavenBtn.addEventListener("click", submitConfigurationForm);
 	generateProjectGradleBtn.addEventListener("click", submitConfigurationForm);
+	junitConfigurationBackButton?.addEventListener("click", resetConfigurationForm);
 	junitConfigurationCloseButton?.addEventListener("click", resetConfigurationForm);
 	generatedProjectPanel.addEventListener("click", async (event) => {
 		const target = event.target;

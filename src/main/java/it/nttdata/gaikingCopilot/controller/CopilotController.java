@@ -58,6 +58,7 @@ public class CopilotController {
     @GetMapping("/getTestCopilot")
     public String getTestCopilot(
         @RequestParam String modelName, 
+	    @RequestParam(defaultValue = "NA") String reasoningEffort,
         @RequestParam String prompt, 
         @RequestParam String streaming,
         WebSession session
@@ -67,8 +68,8 @@ public class CopilotController {
         String githubToken = gitHubTokenSessionService.getRequiredAccessToken(session);
 
         return switch (streaming.toLowerCase()) {
-            case "true" -> copilotService.getResponseCopilotWithStreaming(githubToken, modelName, prompt);
-            case "false" -> copilotService.getResponseCopilotWhitOutStreaming(githubToken, modelName, prompt);
+            case "true" -> copilotService.getResponseCopilotWithStreaming(githubToken, modelName, reasoningEffort, prompt);
+            case "false" -> copilotService.getResponseCopilotWhitOutStreaming(githubToken, modelName, reasoningEffort, prompt);
             default -> throw new IllegalArgumentException("Invalid value for 'streaming' parameter. Expected 'true' or 'false'.");
         };
     }    

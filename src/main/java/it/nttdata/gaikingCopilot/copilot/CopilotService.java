@@ -53,7 +53,7 @@ public class CopilotService {
         }
     }
 
-    public String getResponseCopilotWhitOutStreaming(String githubToken, String model, String prompt) throws InterruptedException {
+    public String getResponseCopilotWhitOutStreaming(String githubToken, String model, String reasoningEffort, String prompt) throws InterruptedException {
         log.info("getResponseCopilotWhitOutStreaming");
 
         validateGitHubToken(githubToken);
@@ -61,30 +61,33 @@ public class CopilotService {
 
         try (CopilotClient client = createClient(githubToken)) {
             client.start().get();
-            log.info("CopilotClient started successfully. model={}, promptLength={}", model, prompt.length());
+                log.info("CopilotClient started successfully. model={}, reasoningEffort={}, promptLength={}", model, reasoningEffort, prompt.length());
 
-            try (CopilotSession session = client.createSession(
-                    new SessionConfig()
-                            .setOnPermissionRequest(PermissionHandler.APPROVE_ALL)
-                            .setModel(model)
-                            .setStreaming(false)
-                            .setReasoningEffort("high")
-            ).get()) {
+                SessionConfig sessionConfig = new SessionConfig()
+                    .setOnPermissionRequest(PermissionHandler.APPROVE_ALL)
+                    .setModel(model)
+                    .setStreaming(false);
 
-                var responseEvent = session.sendAndWait(
-                        new MessageOptions().setPrompt(prompt),
-                        5 * 60 * 1000L
-                ).get();
+                if (reasoningEffort != null && !reasoningEffort.equalsIgnoreCase("NA")) {
+                    sessionConfig.setReasoningEffort(reasoningEffort);
+                }
 
-                String response = responseEvent != null
-                        ? responseEvent.getData().content()
-                        : null;
+                try (CopilotSession session = client.createSession(sessionConfig).get()) {
 
-                log.info("Received non-streaming response. responseLength={}",
-                        response != null ? response.length() : 0);
+                    var responseEvent = session.sendAndWait(
+                            new MessageOptions().setPrompt(prompt),
+                            5 * 60 * 1000L
+                    ).get();
 
-                return response;
-            }
+                    String response = responseEvent != null
+                            ? responseEvent.getData().content()
+                            : null;
+
+                    log.info("Received non-streaming response. responseLength={}",
+                            response != null ? response.length() : 0);
+
+                    return response;
+                }
 
         } catch (ExecutionException e) {
             Throwable cause = rootCause(e);
@@ -100,23 +103,27 @@ public class CopilotService {
         }
     }
 
-    public String getResponseCopilotWithStreaming(String githubToken, String model, String prompt) throws InterruptedException {
+    public String getResponseCopilotWithStreaming(String githubToken, String model, String reasoningEffort, String prompt) throws InterruptedException {
         log.info("getResponseCopilotWithStreaming");
 
         validateGitHubToken(githubToken);
         validateInput(model, prompt);
+       
 
         try (CopilotClient client = createClient(githubToken)) {
             client.start().get();
-            log.info("CopilotClient started successfully. model={}, promptLength={}", model, prompt.length());
+            log.info("CopilotClient started successfully. model={}, reasoningEffort={}, promptLength={}", model, reasoningEffort, prompt.length());
 
-            try (CopilotSession copilotSession = client.createSession(
-                    new SessionConfig()
-                            .setOnPermissionRequest(PermissionHandler.APPROVE_ALL)
-                            .setModel(model)
-                            .setStreaming(true)
-                            .setReasoningEffort("high")
-            ).get()) {
+            SessionConfig sessionConfig = new SessionConfig()
+                    .setOnPermissionRequest(PermissionHandler.APPROVE_ALL)
+                    .setModel(model)
+                    .setStreaming(true);
+
+            if (reasoningEffort != null && !reasoningEffort.equalsIgnoreCase("NA")) {
+                sessionConfig.setReasoningEffort(reasoningEffort);
+            }
+
+            try (CopilotSession copilotSession = client.createSession(sessionConfig).get()) {
 
                 CompletableFuture<Void> done = new CompletableFuture<>();
                 CompletableFuture<String> errorFuture = new CompletableFuture<>();

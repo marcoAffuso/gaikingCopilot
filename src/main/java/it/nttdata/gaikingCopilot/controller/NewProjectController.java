@@ -48,7 +48,8 @@ public class NewProjectController {
 
     @GetMapping("/newProject/gradle_selenium_junit5_cucumber")
     public Map<String, String> gradleSeleniumJunit5Cucumber(
-        @RequestParam @NotBlank String model, 
+        @RequestParam @NotBlank String model,
+	    @RequestParam @NotBlank String reasoningEffort,
         @RequestParam @NotBlank String projectName,
         @RequestParam @NotBlank String groupId,
         @RequestParam @NotBlank String javaVersion,
@@ -80,7 +81,8 @@ public class NewProjectController {
 
     @GetMapping("/newProject/mvn_selenium_junit5_cucumber")
     public Map<String, String> mavenSeleniumJunit5Cucumber(
-        @RequestParam @NotBlank String model, 
+        @RequestParam @NotBlank String model,
+	    @RequestParam @NotBlank String reasoningEffort, 
         @RequestParam @NotBlank String projectName,
         @RequestParam @NotBlank String groupId,
         @RequestParam @NotBlank String javaVersion,
@@ -96,6 +98,7 @@ public class NewProjectController {
 
         AutomationProjectRequest request = new AutomationProjectRequest(
                 model,
+                reasoningEffort,
                 PROJECT_BASE_PATH_MAVEN + projectName,
                 groupId,
                 javaVersion,

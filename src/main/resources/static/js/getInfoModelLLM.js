@@ -1,24 +1,63 @@
 (function () {
 	const modelInput = document.getElementById("model");
+	const reasoningEffortSelect = document.getElementById("reasoningEffort");
+	const getModelLlmBtn = document.getElementById("getModelLlmBtn");
+	const generateProjectMavenBtn = document.getElementById("generateProjectMavenBtn");
+	const generateProjectGradleBtn = document.getElementById("generateProjectGradleBtn");
 	const junitConfigurationModal = document.getElementById("junitConfigurationModal");
 	const modelSelectionModal = document.getElementById("modelSelectionModal");
 	const modelSelectionStatus = document.getElementById("modelSelectionStatus");
 	const modelSelectionList = document.getElementById("modelSelectionList");
+	const modelsById = new Map();
 	let modelsLoaded = false;
 	let reopenJunitConfigurationModal = false;
+	let preserveReasoningEffortsOnNextJunitHide = false;
 
-	if (!modelInput || !junitConfigurationModal || !modelSelectionModal || !modelSelectionStatus || !modelSelectionList) {
+	if (!modelInput || !reasoningEffortSelect || !getModelLlmBtn || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !modelSelectionModal || !modelSelectionStatus || !modelSelectionList) {
 		return;
 	}
 
+	const resetReasoningEfforts = () => {
+		reasoningEffortSelect.innerHTML = '<option value="NA" selected>NA</option>';
+		reasoningEffortSelect.disabled = true;
+	};
+
+	const populateReasoningEfforts = (model) => {
+		const hasReasoningSupport = Boolean(model?.reasoningEffort ?? model?.isReasoningEffort);
+		const supportedReasoningEfforts = Array.isArray(model?.supportedReasoningEfforts)
+			? model.supportedReasoningEfforts.filter((effort) => typeof effort === "string" && effort.trim() !== "")
+			: [];
+
+		if (!hasReasoningSupport || supportedReasoningEfforts.length === 0) {
+			resetReasoningEfforts();
+			return;
+		}
+
+		reasoningEffortSelect.innerHTML = supportedReasoningEfforts
+			.map((effort, index) => `<option value="${effort}"${index === 0 ? " selected" : ""}>${effort}</option>`)
+			.join("");
+		reasoningEffortSelect.disabled = false;
+	};
+
+	resetReasoningEfforts();
+
 	const renderModelList = (models) => {
 		if (!Array.isArray(models) || models.length === 0) {
+			modelsById.clear();
+			resetReasoningEfforts();
 			modelSelectionStatus.textContent = "No Copilot models available.";
 			modelSelectionStatus.classList.remove("d-none");
 			modelSelectionList.classList.add("d-none");
 			modelSelectionList.innerHTML = "";
 			return;
 		}
+
+		modelsById.clear();
+		models.forEach((model) => {
+			if (model?.id) {
+				modelsById.set(model.id, model);
+			}
+		});
 
 		modelSelectionList.innerHTML = models
 			.map((model) => {
@@ -49,6 +88,7 @@
 	};
 
 	const showModelError = (message) => {
+		resetReasoningEfforts();
 		modelSelectionList.classList.add("d-none");
 		modelSelectionList.innerHTML = "";
 		modelSelectionStatus.textContent = message;
@@ -91,6 +131,19 @@
 		void loadCopilotModels();
 	});
 
+	getModelLlmBtn.addEventListener("click", () => {
+		preserveReasoningEffortsOnNextJunitHide = true;
+	});
+
+	junitConfigurationModal.addEventListener("hidden.bs.modal", () => {
+		if (preserveReasoningEffortsOnNextJunitHide) {
+			preserveReasoningEffortsOnNextJunitHide = false;
+			return;
+		}
+
+		resetReasoningEfforts();
+	});
+
 	modelSelectionModal.addEventListener("hidden.bs.modal", () => {
 		if (!reopenJunitConfigurationModal) {
 			return;
@@ -112,10 +165,15 @@
 			return;
 		}
 
-		modelInput.value = selectionButton.dataset.modelValue ?? "";
+		const modelId = selectionButton.dataset.modelValue ?? "";
+		modelInput.value = modelId;
+		populateReasoningEfforts(modelsById.get(modelId));
 		reopenJunitConfigurationModal = true;
 
 		const bootstrapModal = globalThis.bootstrap?.Modal.getInstance(modelSelectionModal);
 		bootstrapModal?.hide();
 	});
+
+	generateProjectMavenBtn.addEventListener("click", resetReasoningEfforts);
+	generateProjectGradleBtn.addEventListener("click", resetReasoningEfforts);
 })();
