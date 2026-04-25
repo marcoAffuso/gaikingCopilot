@@ -14,6 +14,7 @@ import it.nttdata.gaikingCopilot.ai.GenerateTAMavenSeleniumCucumberJunit;
 import it.nttdata.gaikingCopilot.copilot.GitHubTokenSessionService;
 import it.nttdata.gaikingCopilot.model.AutomationProjectRequest;
 import it.nttdata.gaikingCopilot.utility.OperationOnFileSystem;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -27,10 +28,12 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 
 
 @Log4j2
 @RestController
+@Validated
 @RequestMapping("/")
 @RequiredArgsConstructor
 public class NewProjectController {
@@ -45,17 +48,17 @@ public class NewProjectController {
 
     @GetMapping("/newProject/gradle_selenium_junit5_cucumber")
     public Map<String, String> gradleSeleniumJunit5Cucumber(
-        @RequestParam String model, 
-        @RequestParam String projectName,
-        @RequestParam String groupId,
-        @RequestParam String javaVersion,
-        @RequestParam String seleniumVersion,
-        @RequestParam String junitVersion,
-        @RequestParam String junitPlatformVersion,
-        @RequestParam String cucumberVersion,
-        @RequestParam String webdrivermanagerVersion,
-        @RequestParam String surefireVersion,
-        @RequestParam String compilerPluginVersion,
+        @RequestParam @NotBlank String model, 
+        @RequestParam @NotBlank String projectName,
+        @RequestParam @NotBlank String groupId,
+        @RequestParam @NotBlank String javaVersion,
+        @RequestParam @NotBlank String seleniumVersion,
+        @RequestParam @NotBlank String junitVersion,
+        @RequestParam @NotBlank String junitPlatformVersion,
+        @RequestParam @NotBlank String cucumberVersion,
+        @RequestParam @NotBlank String webdrivermanagerVersion,
+        @RequestParam @NotBlank String surefireVersion,
+        @RequestParam @NotBlank String compilerPluginVersion,
         WebSession session
     ) {
         if (session == null || session.isExpired()) {
@@ -77,17 +80,17 @@ public class NewProjectController {
 
     @GetMapping("/newProject/mvn_selenium_junit5_cucumber")
     public Map<String, String> mavenSeleniumJunit5Cucumber(
-        @RequestParam String model, 
-        @RequestParam String projectName,
-        @RequestParam String groupId,
-        @RequestParam String javaVersion,
-        @RequestParam String seleniumVersion,
-        @RequestParam String junitVersion,
-        @RequestParam String junitPlatformVersion,
-        @RequestParam String cucumberVersion,
-        @RequestParam String webdrivermanagerVersion,
-        @RequestParam String surefireVersion,
-        @RequestParam String compilerPluginVersion,
+        @RequestParam @NotBlank String model, 
+        @RequestParam @NotBlank String projectName,
+        @RequestParam @NotBlank String groupId,
+        @RequestParam @NotBlank String javaVersion,
+        @RequestParam @NotBlank String seleniumVersion,
+        @RequestParam @NotBlank String junitVersion,
+        @RequestParam @NotBlank String junitPlatformVersion,
+        @RequestParam @NotBlank String cucumberVersion,
+        @RequestParam @NotBlank String webdrivermanagerVersion,
+        @RequestParam @NotBlank String surefireVersion,
+        @RequestParam @NotBlank String compilerPluginVersion,
         WebSession session
     ) throws InterruptedException, ExecutionException {
 
