@@ -328,12 +328,18 @@ Il generatore richiede che Copilot restituisca JSON valido monolinea con path e 
 8. `checkoutBranch("main")`
 9. `push(...)`
 
+La schermata `createNewProjectTa.html` applica inoltre controlli client-side specifici per:
+
+- `Repository Name` nella modale Git, che deve rispettare il formato `https://... .git`
+- `Junit Version`, che deve avere major strettamente maggiore di 4
+
 ## Validazioni
 
 ### Validazioni lato controller
 
 - `@Validated` in `NewProjectController`
 - `@NotBlank` sui query parameter di generazione progetto
+- validazione imperativa `validateJunitVersion(...)` in `NewProjectController` per imporre una major version JUnit strettamente maggiore di 4 senza usare regex potenzialmente problematiche
 - controlli espliciti su sessione e token nei controller che richiedono autenticazione
 
 ### Validazioni lato DTO
@@ -353,7 +359,11 @@ Il generatore richiede che Copilot restituisca JSON valido monolinea con path e 
 
 ### Validazioni lato frontend
 
-La pagina `createNewProjectTa.html` e il relativo JavaScript applicano validazioni preventive sui form, inclusa la verifica del formato del repository Git remoto.
+La pagina `createNewProjectTa.html` e il relativo JavaScript applicano validazioni preventive sui form, incluse:
+
+- verifica del formato del repository Git remoto nella modale `Create Git Project`
+- controllo del campo `Junit Version` per impedire versioni con major minore o uguale a 4
+- pattern HTML e controlli JavaScript coerenti con i vincoli backend
 
 ## Logging
 

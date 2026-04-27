@@ -11,6 +11,7 @@
 	const generatedProjectText = document.getElementById("generatedProjectText");
 	const projectNameInput = document.getElementById("projectName");
 	const groupIdInput = document.getElementById("groupId");
+	const junitVersionInput = document.getElementById("junitVersion");
 	const createGitProjectModal = document.getElementById("createGitProjectModal");
 	const createGitProjectForm = document.getElementById("createGitProjectForm");
 	const createGitProjectName = document.getElementById("createGitProjectName");
@@ -24,7 +25,7 @@
 	const validationAlertConfirmBtn = document.getElementById("validationAlertConfirmBtn");
 	let selectedPackageManager = "maven";
 
-	if (!junitConfigurationForm || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !generatedProjectPanel || !generatedProjectText || !projectNameInput || !groupIdInput || !createGitProjectModal || !createGitProjectForm || !createGitProjectName || !createGitRepositoryName || !createGitUser || !createGitToken || !createGitProjectSubmitBtn || !validationAlertOverlay || !validationAlertMessage || !validationAlertCloseBtn || !validationAlertConfirmBtn) {
+	if (!junitConfigurationForm || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !generatedProjectPanel || !generatedProjectText || !projectNameInput || !groupIdInput || !junitVersionInput || !createGitProjectModal || !createGitProjectForm || !createGitProjectName || !createGitRepositoryName || !createGitUser || !createGitToken || !createGitProjectSubmitBtn || !validationAlertOverlay || !validationAlertMessage || !validationAlertCloseBtn || !validationAlertConfirmBtn) {
 		return;
 	}
 
@@ -97,6 +98,17 @@
 
 		if (!validGroupIdPattern.test(groupIdInput.value.trim())) {
 			groupIdInput.focus();
+			return true;
+		}
+
+		return false;
+	};
+
+	const hasInvalidJunitVersion = () => {
+		const validJunitVersionPattern = /^[5-9]\d*(\.\d+)*$/;
+
+		if (!validJunitVersionPattern.test(junitVersionInput.value.trim())) {
+			junitVersionInput.focus();
 			return true;
 		}
 
@@ -290,6 +302,11 @@
 
 		if (hasInvalidGroupIdFormat()) {
 			showValidationAlert("Group Id must use the format stringa1.stringa2 with letters only.");
+			return;
+		}
+
+		if (hasInvalidJunitVersion()) {
+			showValidationAlert("Junit Version must start with a major version greater than 4.");
 			return;
 		}
 

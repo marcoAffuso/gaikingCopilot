@@ -82,6 +82,8 @@ public class NewProjectController {
             return Map.of(MESSAGE_KEY, "Token GitHub non disponibile. Effettua il login.");
         }
 
+        validateJunitVersion(junitVersion);
+
         log.info("Returning Gradle project generation response. sessionId={}, projectPath={}", session.getId(), PROJECT_BASE_PATH_GRADLE + projectName);
 
         return Map.of(
@@ -126,6 +128,8 @@ public class NewProjectController {
         );
 
         String githubToken = gitHubTokenSessionService.getRequiredAccessToken(session);
+
+        validateJunitVersion(junitVersion);
         
         this.generateTAMavenSeleniumCucumberJunit.generateAutomationJavaSeleniumCucumberProject(request, githubToken);
 
@@ -244,6 +248,30 @@ public class NewProjectController {
 
     private String sessionId(WebSession session) {
         return session != null ? session.getId() : "unknown";
+    }
+
+    private void validateJunitVersion(String junitVersion) {
+        String[] versionParts = junitVersion.split("\\.");
+        if (versionParts.length == 0) {
+            throw new IllegalArgumentException("Junit Version must start with a major version greater than 4.");
+        }
+
+        try {
+            int majorVersion = Integer.parseInt(versionParts[0]);
+            if (majorVersion <= 4) {
+                throw new IllegalArgumentException("Junit Version must start with a major version greater than 4.");
+            }
+
+            for (String versionPart : versionParts) {
+                if (versionPart.isBlank()) {
+                    throw new IllegalArgumentException("Junit Version must start with a major version greater than 4.");
+                }
+
+                Integer.parseInt(versionPart);
+            }
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Junit Version must start with a major version greater than 4.", ex);
+        }
     }
 
 

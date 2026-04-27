@@ -235,6 +235,12 @@ Utente Applicativo
 - Surefire Version
 - Compiler Plugin Version
 
+### Regole funzionali specifiche della configurazione JUnit
+
+- `Junit Version` deve avere una major version strettamente maggiore di 4
+- valori come `4.X.X`, `4.13.2` o stringhe non numeriche non sono ammessi
+- il controllo viene applicato prima dell'invio della richiesta e viene garantito anche lato backend
+
 ### Esito atteso
 
 Il sistema mostra un messaggio di progetto creato correttamente e abilita le azioni successive sul progetto generato.
@@ -242,7 +248,7 @@ Il sistema mostra un messaggio di progetto creato correttamente e abilita le azi
 ### Scenari alternativi
 
 - campi obbligatori mancanti: il sistema mostra un messaggio di validazione
-- valori non conformi ai vincoli funzionali: il sistema blocca l'operazione
+- valori non conformi ai vincoli funzionali, inclusa una `Junit Version` con major minore o uguale a 4: il sistema blocca l'operazione
 - sessione non valida: l'utente viene reindirizzato al login
 
 ### Postcondizioni
@@ -345,6 +351,7 @@ Utente Applicativo
 - `Repository Name` deve iniziare con `https://`
 - `Repository Name` deve terminare con `.git`
 - tutti i campi della modale sono obbligatori
+- la modale `Create Git Project` usa una larghezza estesa per facilitare l'inserimento di URL repository completi
 
 ### Scenari alternativi
 
@@ -499,6 +506,7 @@ flowchart TD
 ## Regole di generazione progetto
 
 - il progetto viene generato solo se tutti i parametri obbligatori sono valorizzati
+- `Junit Version` deve rappresentare una versione valida con major strettamente maggiore di 4
 - la funzionalita effettivamente implementata lato generazione automatica e quella Maven Selenium JUnit Cucumber
 - il progetto generato viene salvato localmente e poi reso disponibile per le azioni successive
 
@@ -577,6 +585,7 @@ Il sistema deve consentire il logout locale e tentare la revoca del grant GitHub
 
 - dato un utente autenticato, quando compila tutti i campi richiesti e avvia la generazione Maven, allora il sistema restituisce il progetto generato
 - dato un utente che lascia campi obbligatori vuoti, quando tenta di generare il progetto, allora il sistema mostra un errore di validazione
+- dato un utente che inserisce una `Junit Version` con major minore o uguale a 4, quando tenta di generare il progetto, allora il sistema blocca l'operazione con messaggio di validazione
 
 ### Create Git Project
 
