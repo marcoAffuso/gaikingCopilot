@@ -172,6 +172,8 @@
 		delete createGitProjectName.dataset.projectPath;
 	};
 
+	const isValidGitRepositoryUrl = (value) => /^https:\/\/.+\.git$/i.test(value);
+
 	const submitCreateGitProjectForm = async () => {
 		const projectPath = createGitProjectName.dataset.projectPath?.trim();
 		const repositoryName = createGitRepositoryName.value.trim();
@@ -180,6 +182,11 @@
 
 		if (!projectPath || !repositoryName || !userGit || !tokenGit) {
 			showValidationAlert("All fields must be filled in.");
+			return;
+		}
+
+		if (!isValidGitRepositoryUrl(repositoryName)) {
+			showValidationAlert("Repository Name must start with https:// and end with .git.");
 			return;
 		}
 

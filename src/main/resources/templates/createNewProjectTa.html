@@ -232,7 +232,7 @@
 		</div>
 
 		<div class="modal fade" id="createGitProjectModal" tabindex="-1" aria-labelledby="createGitProjectModalLabel" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-dialog modal-dialog-centered create-git-project-dialog">
 				<div class="modal-content language-modal-content">
 					<div class="modal-header language-modal-header">
 						<h2 class="modal-title language-modal-title" id="createGitProjectModalLabel">Create Git Project</h2>
@@ -246,7 +246,7 @@
 							</div>
 							<div class="configuration-form-row">
 								<label class="configuration-form-label" for="createGitPassword">Repository Name</label>
-								<input class="form-control configuration-form-input" id="createGitPassword" name="createGitPassword" type="text">
+								<input class="form-control configuration-form-input" id="createGitPassword" name="createGitPassword" type="url" pattern="https://.*\.git" placeholder="https://github.com/user/repository.git">
 							</div>
 							<div class="configuration-form-row">
 								<label class="configuration-form-label" for="createGitUser">User Git</label>

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -42,6 +43,24 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = new HashMap<>();
         body.put(STATUS, 400);
         body.put(ERROR, ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        String errorMessage = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(fieldError -> fieldError.getDefaultMessage() != null ? fieldError.getDefaultMessage() : fieldError.getField() + " is not valid")
+                .orElse("Request body is not valid");
+
+        log.warn("Handled request body validation exception. message={}", errorMessage, ex);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put(STATUS, 400);
+        body.put(ERROR, errorMessage);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
