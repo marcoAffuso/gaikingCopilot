@@ -31,9 +31,18 @@ public class CopilotAuthController {
 
     @GetMapping("/device/start")
     public Mono<ResponseEntity<Map<String, Object>>> startDeviceAuthorization(WebSession session) {
+    log.info("Handling device authorization start request. sessionId={}", sessionId(session));
+
         return Mono.fromCallable(() -> copilotOAuth.startDeviceAuthorization(session))
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(deviceStart -> {
+            log.info(
+                "Device authorization start completed. sessionId={}, pollIntervalSeconds={}, expiresInSeconds={}",
+                sessionId(session),
+                deviceStart.pollIntervalSeconds(),
+                deviceStart.expiresInSeconds()
+            );
+
                     Map<String, Object> body = new LinkedHashMap<>();
                     body.put(STATUS_KEY, "code_ready");
                     body.put(MESSAGE_KEY, deviceStart.message());
@@ -49,7 +58,7 @@ public class CopilotAuthController {
                             .body(body);
                 })
                 .onErrorResume(ex -> {
-                    log.error("Errore durante l'avvio del GitHub Device Flow", ex);
+                    log.error("Device authorization start request failed. sessionId={}", sessionId(session), ex);
 
                     Map<String, Object> body = new LinkedHashMap<>();
                     body.put(STATUS_KEY, "error");
@@ -63,9 +72,18 @@ public class CopilotAuthController {
 
     @GetMapping("/device/status")
     public Mono<ResponseEntity<Map<String, Object>>> getDeviceAuthorizationStatus(WebSession session) {
+        log.info("Handling device authorization status request. sessionId={}", sessionId(session));
+
         return Mono.fromCallable(() -> copilotOAuth.pollDeviceAuthorization(session))
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(pollResult -> {
+                log.info(
+                    "Device authorization status retrieved. sessionId={}, status={}, authenticated={}",
+                    sessionId(session),
+                    pollResult.status(),
+                    pollResult.authenticated()
+                );
+
                     Map<String, Object> body = new LinkedHashMap<>();
                     body.put(STATUS_KEY, pollResult.status());
                     body.put(MESSAGE_KEY, pollResult.message());
@@ -79,7 +97,7 @@ public class CopilotAuthController {
                             .body(body);
                 })
                 .onErrorResume(ex -> {
-                    log.error("Errore durante il polling del GitHub Device Flow", ex);
+                    log.error("Device authorization status request failed. sessionId={}", sessionId(session), ex);
 
                     Map<String, Object> body = new LinkedHashMap<>();
                     body.put(STATUS_KEY, "error");
@@ -91,6 +109,10 @@ public class CopilotAuthController {
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(body));
                 });
+    }
+
+    private String sessionId(WebSession session) {
+        return session != null ? session.getId() : "unknown";
     }
 
 }

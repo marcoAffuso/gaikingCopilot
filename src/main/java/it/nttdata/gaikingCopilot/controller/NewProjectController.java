@@ -69,14 +69,20 @@ public class NewProjectController {
         @RequestParam @NotBlank String compilerPluginVersion,
         WebSession session
     ) {
+        log.info("Handling Gradle project generation request. sessionId={}, projectName={}, model={}, javaVersion={}", sessionId(session), projectName, model, javaVersion);
+
         if (session == null || session.isExpired()) {
+            log.info("Rejecting Gradle project generation request because session is missing or expired. sessionId={}", sessionId(session));
             return Map.of(MESSAGE_KEY, "Sessione scaduta. Effettua il login.");
         }
 
         String token = gitHubTokenSessionService.getOptionalAccessToken(session);
         if (token == null || token.isBlank()) {
+            log.info("Rejecting Gradle project generation request because GitHub token is missing in session. sessionId={}", session.getId());
             return Map.of(MESSAGE_KEY, "Token GitHub non disponibile. Effettua il login.");
         }
+
+        log.info("Returning Gradle project generation response. sessionId={}, projectPath={}", session.getId(), PROJECT_BASE_PATH_GRADLE + projectName);
 
         return Map.of(
             MESSAGE_KEY, "Project generated successfully.",
@@ -102,6 +108,7 @@ public class NewProjectController {
         @RequestParam @NotBlank String compilerPluginVersion,
         WebSession session
     ) throws InterruptedException, ExecutionException {
+        log.info("Handling Maven project generation request. sessionId={}, projectName={}, model={}, javaVersion={}", sessionId(session), projectName, model, javaVersion);
 
         AutomationProjectRequest request = new AutomationProjectRequest(
                 model,
@@ -122,7 +129,7 @@ public class NewProjectController {
         
         this.generateTAMavenSeleniumCucumberJunit.generateAutomationJavaSeleniumCucumberProject(request, githubToken);
 
-        log.info("Project generation completed successfully for project: {}", projectName);
+        log.info("Maven project generation completed. sessionId={}, projectPath={}", sessionId(session), PROJECT_BASE_PATH_MAVEN + projectName);
 
         return Map.of(
             MESSAGE_KEY, "Project generated successfully.",
@@ -135,17 +142,22 @@ public class NewProjectController {
         @RequestParam String projectName,
         WebSession session
     ) throws IOException {
+        log.info("Handling project download request. sessionId={}, projectName={}", sessionId(session), projectName);
+
         if (session == null || session.isExpired()) {
+            log.info("Rejecting project download request because session is missing or expired. sessionId={}", sessionId(session));
             return ResponseEntity.status(401).build();
         }
 
         String token = gitHubTokenSessionService.getOptionalAccessToken(session);
         if (token == null || token.isBlank()) {
+            log.info("Rejecting project download request because GitHub token is missing in session. sessionId={}", session.getId());
             return ResponseEntity.status(401).build();
         }
 
         Path projectPath = Path.of(projectName);
         if (!Files.exists(projectPath) || !Files.isDirectory(projectPath)) {
+            log.info("Project download request returned not found. sessionId={}, projectName={}", session.getId(), projectName);
             return ResponseEntity.notFound().build();
         }
 
@@ -153,6 +165,8 @@ public class NewProjectController {
 
         byte[] zipContent = operationOnFileSystem.zipProjectDirectory(projectPath);
         ByteArrayResource resource = new ByteArrayResource(zipContent);
+
+        log.info("Returning project download response. sessionId={}, projectName={}, contentLength={}", session.getId(), projectName, zipContent.length);
 
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + projectName + ".zip\"")
@@ -166,22 +180,28 @@ public class NewProjectController {
         @RequestParam String projectName,
         WebSession session
     ) throws IOException {
+        log.info("Handling project delete request. sessionId={}, projectName={}", sessionId(session), projectName);
+
         if (session == null || session.isExpired()) {
+            log.info("Rejecting project delete request because session is missing or expired. sessionId={}", sessionId(session));
             return ResponseEntity.status(401).build();
         }       
 
         String token = gitHubTokenSessionService.getOptionalAccessToken(session);
         if (token == null || token.isBlank()) {
+            log.info("Rejecting project delete request because GitHub token is missing in session. sessionId={}", session.getId());
             return ResponseEntity.status(401).build();
         }
 
         Path projectPath = Path.of(projectName);
         if (!Files.exists(projectPath)) {
+            log.info("Project delete request returned not found. sessionId={}, projectName={}", session.getId(), projectName);
             return ResponseEntity.notFound().build();
         }
 
         OperationOnFileSystem operationOnFileSystem = new OperationOnFileSystem();
         operationOnFileSystem.deleteProjectDirectory(projectPath);
+        log.info("Project delete completed. sessionId={}, projectName={}", session.getId(), projectName);
         return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Project deleted successfully."));
     }
 
@@ -190,17 +210,22 @@ public class NewProjectController {
         @Valid @RequestBody CreateProjectGitRequest request,
         WebSession session
     ) throws IOException, GitAPIException, URISyntaxException {
+        log.info("Handling Git project creation request. sessionId={}, projectName={}, repositoryName={}", sessionId(session), request.getProjectName(), request.getRepositoryName());
+
         if (session == null || session.isExpired()) {
+            log.info("Rejecting Git project creation request because session is missing or expired. sessionId={}", sessionId(session));
             return ResponseEntity.status(401).body(Map.of(MESSAGE_KEY, "Sessione scaduta. Effettua il login."));
         }       
 
         String token = gitHubTokenSessionService.getOptionalAccessToken(session);
         if (token == null || token.isBlank()) {
+            log.info("Rejecting Git project creation request because GitHub token is missing in session. sessionId={}", session.getId());
             return ResponseEntity.status(401).build();
         }
 
         Path projectPath = Path.of(request.getProjectName());
         if (!Files.exists(projectPath)) {
+            log.info("Git project creation request returned not found. sessionId={}, projectName={}", session.getId(), request.getProjectName());
             return ResponseEntity.notFound().build();
         }
 
@@ -212,7 +237,13 @@ public class NewProjectController {
         gitRepositoryService.checkoutBranch(projectPath, branchName);
         gitRepositoryService.push(projectPath, branchName, request.getUserGit(), request.getTokenGit());
 
+        log.info("Git project creation completed. sessionId={}, projectName={}, branchName={}", session.getId(), request.getProjectName(), branchName);
+
         return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Project Git created successfully."));
+    }
+
+    private String sessionId(WebSession session) {
+        return session != null ? session.getId() : "unknown";
     }
 
 

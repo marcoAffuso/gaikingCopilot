@@ -5,6 +5,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.WebSession;
 
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
 @Service
 public class GitHubTokenSessionService {
 
@@ -18,16 +21,19 @@ public class GitHubTokenSessionService {
 
     public void storeAccessToken(WebSession session, String accessToken) {
         if (accessToken == null || accessToken.isBlank()) {
+            log.warn("Cannot store GitHub access token because it is missing. sessionId={}", sessionId(session));
             throw new IllegalArgumentException("GitHub access token mancante");
         }
 
         session.getAttributes().put(GITHUB_ACCESS_TOKEN_KEY, accessToken);
+        log.info("GitHub access token stored in session. sessionId={}", sessionId(session));
     }
 
     public String getRequiredAccessToken(WebSession session) {
         Object token = session.getAttributes().get(GITHUB_ACCESS_TOKEN_KEY);
 
         if (token == null) {
+            log.warn("GitHub access token not found in session. sessionId={}", sessionId(session));
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "Utente non autenticato con GitHub"
@@ -37,12 +43,14 @@ public class GitHubTokenSessionService {
         String accessToken = token.toString();
 
         if (accessToken.isBlank()) {
+            log.warn("GitHub access token is blank in session. sessionId={}", sessionId(session));
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "GitHub access token non valido"
             );
         }
 
+        log.debug("GitHub access token retrieved from session. sessionId={}", sessionId(session));
         return accessToken;
     }
 
@@ -53,27 +61,32 @@ public class GitHubTokenSessionService {
 
     public void storeOAuthState(WebSession session, String state) {
         if (state == null || state.isBlank()) {
+            log.warn("Cannot store GitHub OAuth state because it is missing. sessionId={}", sessionId(session));
             throw new IllegalArgumentException("OAuth state mancante");
         }
 
         session.getAttributes().put(GITHUB_OAUTH_STATE_KEY, state);
+        log.debug("GitHub OAuth state stored in session. sessionId={}", sessionId(session));
     }
 
     public String getRequiredOAuthState(WebSession session) {
         Object state = session.getAttributes().get(GITHUB_OAUTH_STATE_KEY);
 
         if (state == null || state.toString().isBlank()) {
+            log.warn("GitHub OAuth state not found in session. sessionId={}", sessionId(session));
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "OAuth state non presente in sessione"
             );
         }
 
+        log.debug("GitHub OAuth state retrieved from session. sessionId={}", sessionId(session));
         return state.toString();
     }
 
     public void clearOAuthState(WebSession session) {
         session.getAttributes().remove(GITHUB_OAUTH_STATE_KEY);
+        log.debug("GitHub OAuth state cleared from session. sessionId={}", sessionId(session));
     }
 
     public void storeDeviceAuthorization(
@@ -84,18 +97,22 @@ public class GitHubTokenSessionService {
             long expiresAtEpochMillis
     ) {
         if (deviceCode == null || deviceCode.isBlank()) {
+            log.warn("Cannot store GitHub device authorization because device code is missing. sessionId={}", sessionId(session));
             throw new IllegalArgumentException("GitHub device code mancante");
         }
 
         if (userCode == null || userCode.isBlank()) {
+            log.warn("Cannot store GitHub device authorization because user code is missing. sessionId={}", sessionId(session));
             throw new IllegalArgumentException("GitHub user code mancante");
         }
 
         if (pollIntervalSeconds <= 0) {
+            log.warn("Cannot store GitHub device authorization because polling interval is invalid. sessionId={}, pollIntervalSeconds={}", sessionId(session), pollIntervalSeconds);
             throw new IllegalArgumentException("Intervallo di polling non valido");
         }
 
         if (expiresAtEpochMillis <= 0) {
+            log.warn("Cannot store GitHub device authorization because expiry is invalid. sessionId={}, expiresAtEpochMillis={}", sessionId(session), expiresAtEpochMillis);
             throw new IllegalArgumentException("Scadenza device flow non valida");
         }
 
@@ -103,18 +120,26 @@ public class GitHubTokenSessionService {
         session.getAttributes().put(GITHUB_DEVICE_USER_CODE_KEY, userCode);
         session.getAttributes().put(GITHUB_DEVICE_INTERVAL_KEY, pollIntervalSeconds);
         session.getAttributes().put(GITHUB_DEVICE_EXPIRES_AT_KEY, expiresAtEpochMillis);
+        log.info(
+                "GitHub device authorization stored in session. sessionId={}, pollIntervalSeconds={}, expiresAtEpochMillis={}",
+                sessionId(session),
+                pollIntervalSeconds,
+                expiresAtEpochMillis
+        );
     }
 
     public String getRequiredDeviceCode(WebSession session) {
         Object deviceCode = session.getAttributes().get(GITHUB_DEVICE_CODE_KEY);
 
         if (deviceCode == null || deviceCode.toString().isBlank()) {
+            log.warn("GitHub device code not found in session. sessionId={}", sessionId(session));
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "GitHub device code non presente in sessione"
             );
         }
 
+        log.debug("GitHub device code retrieved from session. sessionId={}", sessionId(session));
         return deviceCode.toString();
     }
 
@@ -127,12 +152,14 @@ public class GitHubTokenSessionService {
         Object userCode = session.getAttributes().get(GITHUB_DEVICE_USER_CODE_KEY);
 
         if (userCode == null || userCode.toString().isBlank()) {
+            log.warn("GitHub user code not found in session. sessionId={}", sessionId(session));
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "GitHub user code non presente in sessione"
             );
         }
 
+        log.debug("GitHub user code retrieved from session. sessionId={}", sessionId(session));
         return userCode.toString();
     }
 
@@ -140,6 +167,7 @@ public class GitHubTokenSessionService {
         Object interval = session.getAttributes().get(GITHUB_DEVICE_INTERVAL_KEY);
 
         if (interval == null) {
+            log.warn("GitHub polling interval not found in session. sessionId={}", sessionId(session));
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "Intervallo di polling GitHub non presente in sessione"
@@ -150,12 +178,14 @@ public class GitHubTokenSessionService {
             int pollIntervalSeconds = numberValue.intValue();
 
             if (pollIntervalSeconds <= 0) {
+                log.warn("GitHub polling interval in session is invalid. sessionId={}, pollIntervalSeconds={}", sessionId(session), pollIntervalSeconds);
                 throw new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
                         "Intervallo di polling GitHub non valido"
                 );
             }
 
+            log.debug("GitHub polling interval retrieved from session. sessionId={}, pollIntervalSeconds={}", sessionId(session), pollIntervalSeconds);
             return pollIntervalSeconds;
         }
 
@@ -166,9 +196,11 @@ public class GitHubTokenSessionService {
                 throw new NumberFormatException("Intervallo <= 0");
             }
 
+            log.debug("GitHub polling interval parsed from session. sessionId={}, pollIntervalSeconds={}", sessionId(session), pollIntervalSeconds);
             return pollIntervalSeconds;
 
         } catch (NumberFormatException ex) {
+            log.warn("GitHub polling interval in session is not parseable. sessionId={}, rawValue={}", sessionId(session), interval);
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "Intervallo di polling GitHub non valido"
@@ -180,6 +212,7 @@ public class GitHubTokenSessionService {
         Object expiresAt = session.getAttributes().get(GITHUB_DEVICE_EXPIRES_AT_KEY);
 
         if (expiresAt == null) {
+            log.warn("GitHub device flow expiry not found in session. sessionId={}", sessionId(session));
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "Scadenza GitHub device flow non presente in sessione"
@@ -190,12 +223,14 @@ public class GitHubTokenSessionService {
             long expiresAtEpochMillis = numberValue.longValue();
 
             if (expiresAtEpochMillis <= 0L) {
+                log.warn("GitHub device flow expiry in session is invalid. sessionId={}, expiresAtEpochMillis={}", sessionId(session), expiresAtEpochMillis);
                 throw new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
                         "Scadenza GitHub device flow non valida"
                 );
             }
 
+            log.debug("GitHub device flow expiry retrieved from session. sessionId={}, expiresAtEpochMillis={}", sessionId(session), expiresAtEpochMillis);
             return expiresAtEpochMillis;
         }
 
@@ -206,9 +241,11 @@ public class GitHubTokenSessionService {
                 throw new NumberFormatException("Scadenza <= 0");
             }
 
+            log.debug("GitHub device flow expiry parsed from session. sessionId={}, expiresAtEpochMillis={}", sessionId(session), expiresAtEpochMillis);
             return expiresAtEpochMillis;
 
         } catch (NumberFormatException ex) {
+            log.warn("GitHub device flow expiry in session is not parseable. sessionId={}, rawValue={}", sessionId(session), expiresAt);
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "Scadenza GitHub device flow non valida"
@@ -218,10 +255,12 @@ public class GitHubTokenSessionService {
 
     public void updateDeviceInterval(WebSession session, int pollIntervalSeconds) {
         if (pollIntervalSeconds <= 0) {
+            log.warn("Cannot update GitHub polling interval because it is invalid. sessionId={}, pollIntervalSeconds={}", sessionId(session), pollIntervalSeconds);
             throw new IllegalArgumentException("Intervallo di polling non valido");
         }
 
         session.getAttributes().put(GITHUB_DEVICE_INTERVAL_KEY, pollIntervalSeconds);
+        log.info("GitHub polling interval updated in session. sessionId={}, pollIntervalSeconds={}", sessionId(session), pollIntervalSeconds);
     }
 
     public boolean hasActiveDeviceAuthorization(WebSession session) {
@@ -253,21 +292,28 @@ public class GitHubTokenSessionService {
         session.getAttributes().remove(GITHUB_DEVICE_USER_CODE_KEY);
         session.getAttributes().remove(GITHUB_DEVICE_INTERVAL_KEY);
         session.getAttributes().remove(GITHUB_DEVICE_EXPIRES_AT_KEY);
+        log.debug("GitHub device authorization cleared from session. sessionId={}", sessionId(session));
     }
 
     public void clearAccessToken(WebSession session) {
         session.getAttributes().remove(GITHUB_ACCESS_TOKEN_KEY);
+        log.info("GitHub access token cleared from session. sessionId={}", sessionId(session));
     }
 
     public void clearAll(WebSession session) {
         clearOAuthState(session);
         clearDeviceAuthorization(session);
         clearAccessToken(session);
+        log.info("GitHub authentication state fully cleared from session. sessionId={}", sessionId(session));
     }
 
     public boolean isAuthenticated(WebSession session) {
         String token = getOptionalAccessToken(session);
         return token != null && !token.isBlank();
+    }
+
+    private String sessionId(WebSession session) {
+        return session != null ? session.getId() : "unknown";
     }
 
 }

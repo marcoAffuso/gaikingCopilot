@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.log4j.Log4j2;
 
 
 
+@Log4j2
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -23,6 +25,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<Map<String, Object>> handleCustomException(CustomException ex) {
+        log.warn("Handled custom exception. status={}, message={}", ex.getStatusCode(), ex.getMessage(), ex);
+
         Map<String, Object> body = new HashMap<>();
         body.put(STATUS, ex.getStatusCode());
         body.put(ERROR, ex.getMessage());
@@ -33,6 +37,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({IllegalArgumentException.class, ConstraintViolationException.class, URISyntaxException.class, GitAPIException.class})
     public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(Exception ex) {
+        log.warn("Handled bad request exception. exceptionType={}, message={}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+
         Map<String, Object> body = new HashMap<>();
         body.put(STATUS, 400);
         body.put(ERROR, ex.getMessage());
@@ -42,6 +48,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        log.error("Unhandled exception reached global handler. exceptionType={}, message={}", ex.getClass().getName(), ex.getMessage(), ex);
+
         Map<String, Object> body = new HashMap<>();
         body.put(STATUS, 500);
         body.put(ERROR, "Errore interno del server");

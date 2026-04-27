@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.DosFileAttributeView;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -51,9 +52,22 @@ public class OperationOnFileSystem {
 
     private void deletePath(Path path) {
         try {
+            clearReadOnlyAttribute(path);
             Files.deleteIfExists(path);
         } catch (IOException exception) {
             throw new UncheckedIOException(exception);
+        }
+    }
+
+    private void clearReadOnlyAttribute(Path path) throws IOException {
+        DosFileAttributeView dosFileAttributeView = Files.getFileAttributeView(path, DosFileAttributeView.class);
+        if (dosFileAttributeView == null) {
+            return;
+        }
+
+        if (dosFileAttributeView.readAttributes().isReadOnly()) {
+            dosFileAttributeView.setReadOnly(false);
+            log.debug("Removed read-only attribute before deleting path. path={}", path);
         }
     }
 
