@@ -12,14 +12,19 @@
 	const projectNameInput = document.getElementById("projectName");
 	const groupIdInput = document.getElementById("groupId");
 	const createGitProjectModal = document.getElementById("createGitProjectModal");
+	const createGitProjectForm = document.getElementById("createGitProjectForm");
 	const createGitProjectName = document.getElementById("createGitProjectName");
+	const createGitRepositoryName = document.getElementById("createGitPassword");
+	const createGitUser = document.getElementById("createGitUser");
+	const createGitToken = document.getElementById("createGitToken");
+	const createGitProjectSubmitBtn = document.getElementById("createGitProjectSubmitBtn");
 	const validationAlertOverlay = document.getElementById("validationAlertOverlay");
 	const validationAlertMessage = document.getElementById("validationAlertMessage");
 	const validationAlertCloseBtn = document.getElementById("validationAlertCloseBtn");
 	const validationAlertConfirmBtn = document.getElementById("validationAlertConfirmBtn");
 	let selectedPackageManager = "maven";
 
-	if (!junitConfigurationForm || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !generatedProjectPanel || !generatedProjectText || !projectNameInput || !groupIdInput || !createGitProjectModal || !createGitProjectName || !validationAlertOverlay || !validationAlertMessage || !validationAlertCloseBtn || !validationAlertConfirmBtn) {
+	if (!junitConfigurationForm || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !generatedProjectPanel || !generatedProjectText || !projectNameInput || !groupIdInput || !createGitProjectModal || !createGitProjectForm || !createGitProjectName || !createGitRepositoryName || !createGitUser || !createGitToken || !createGitProjectSubmitBtn || !validationAlertOverlay || !validationAlertMessage || !validationAlertCloseBtn || !validationAlertConfirmBtn) {
 		return;
 	}
 
@@ -157,8 +162,58 @@
 
 	const openCreateGitProjectModal = (projectName) => {
 		createGitProjectName.value = getDisplayProjectName(projectName);
+		createGitProjectName.dataset.projectPath = projectName;
 		const modalInstance = globalThis.bootstrap?.Modal.getOrCreateInstance(createGitProjectModal);
 		modalInstance?.show();
+	};
+
+	const resetCreateGitProjectForm = () => {
+		createGitProjectForm.reset();
+		delete createGitProjectName.dataset.projectPath;
+	};
+
+	const submitCreateGitProjectForm = async () => {
+		const projectPath = createGitProjectName.dataset.projectPath?.trim();
+		const repositoryName = createGitRepositoryName.value.trim();
+		const userGit = createGitUser.value.trim();
+		const tokenGit = createGitToken.value.trim();
+
+		if (!projectPath || !repositoryName || !userGit || !tokenGit) {
+			showValidationAlert("All fields must be filled in.");
+			return;
+		}
+
+		try {
+			const response = await fetch("/newProject/createProjectGit", {
+				method: "POST",
+				headers: {
+					Accept: "application/json",
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({
+					projectName: projectPath,
+					repositoryName,
+					userGit,
+					tokenGit
+				})
+			});
+
+			if (response.status === 401) {
+				globalThis.location.href = "/api/copilot/auth/login";
+				return;
+			}
+
+			if (!response.ok) {
+				throw new Error(`Unable to create git project (${response.status})`);
+			}
+
+			const modalInstance = globalThis.bootstrap?.Modal.getInstance(createGitProjectModal)
+				?? globalThis.bootstrap?.Modal.getOrCreateInstance(createGitProjectModal);
+			modalInstance?.hide();
+			showGeneratedProject(projectPath);
+		} catch (error) {
+			showValidationAlert(error instanceof Error ? error.message : "Unable to create git project.");
+		}
 	};
 
 	const handleDeleteProject = async (projectName) => {
@@ -271,8 +326,10 @@
 
 	generateProjectMavenBtn.addEventListener("click", submitConfigurationForm);
 	generateProjectGradleBtn.addEventListener("click", submitConfigurationForm);
+	createGitProjectSubmitBtn.addEventListener("click", submitCreateGitProjectForm);
 	junitConfigurationBackButton?.addEventListener("click", resetConfigurationForm);
 	junitConfigurationCloseButton?.addEventListener("click", resetConfigurationForm);
+	createGitProjectModal.addEventListener("hidden.bs.modal", resetCreateGitProjectForm);
 	validationAlertCloseBtn.addEventListener("click", hideValidationAlert);
 	validationAlertConfirmBtn.addEventListener("click", hideValidationAlert);
 	validationAlertOverlay.addEventListener("click", (event) => {

@@ -1,8 +1,10 @@
 package it.nttdata.gaikingCopilot.exception;
 
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,7 +31,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getStatusCode()).body(body);
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, ConstraintViolationException.class})
+    @ExceptionHandler({IllegalArgumentException.class, ConstraintViolationException.class, URISyntaxException.class, GitAPIException.class})
     public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(Exception ex) {
         Map<String, Object> body = new HashMap<>();
         body.put(STATUS, 400);

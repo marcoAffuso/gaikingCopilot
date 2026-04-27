@@ -16,10 +16,6 @@ import java.util.Comparator;
 @Log4j2
 public class OperationOnFileSystem {
 
-    public void createProjectGit(Path projectPath) throws IOException {
-        log.info("Creating project Git: {}", projectPath.getFileName());
-    }
-
     public byte[] zipProjectDirectory(Path projectPath) throws IOException {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
              ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);

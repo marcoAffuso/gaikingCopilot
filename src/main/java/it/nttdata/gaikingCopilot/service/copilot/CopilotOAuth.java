@@ -1,4 +1,4 @@
-package it.nttdata.gaikingCopilot.copilot;
+package it.nttdata.gaikingCopilot.service.copilot;
 
 import java.util.List;
 import java.util.Map;

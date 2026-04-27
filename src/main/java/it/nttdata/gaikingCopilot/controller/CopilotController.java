@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.WebSession;
 
 import com.github.copilot.sdk.json.ModelInfo;
-import it.nttdata.gaikingCopilot.copilot.CopilotService;
-import it.nttdata.gaikingCopilot.copilot.GitHubTokenSessionService;
+
 import it.nttdata.gaikingCopilot.model.ModelCopilot;
+import it.nttdata.gaikingCopilot.service.copilot.CopilotService;
+import it.nttdata.gaikingCopilot.service.copilot.GitHubTokenSessionService;
+
 import org.springframework.web.bind.annotation.RequestParam;
 
 

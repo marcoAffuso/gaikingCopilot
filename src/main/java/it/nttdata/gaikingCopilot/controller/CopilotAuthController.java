@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.WebSession;
 
-import it.nttdata.gaikingCopilot.copilot.CopilotOAuth;
+import it.nttdata.gaikingCopilot.service.copilot.CopilotOAuth;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import reactor.core.publisher.Mono;

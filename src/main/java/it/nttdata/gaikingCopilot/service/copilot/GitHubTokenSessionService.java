@@ -1,4 +1,4 @@
-package it.nttdata.gaikingCopilot.copilot;
+package it.nttdata.gaikingCopilot.service.copilot;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

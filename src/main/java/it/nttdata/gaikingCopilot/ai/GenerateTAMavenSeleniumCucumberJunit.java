@@ -4,8 +4,8 @@ import java.util.concurrent.ExecutionException;
 
 import org.springframework.stereotype.Service;
 
-import it.nttdata.gaikingCopilot.copilot.CopilotService;
 import it.nttdata.gaikingCopilot.model.AutomationProjectRequest;
+import it.nttdata.gaikingCopilot.service.copilot.CopilotService;
 import it.nttdata.gaikingCopilot.utility.ProjectFileWriterTool;
 import it.nttdata.gaikingCopilot.utility.ReadAndWriteJson;
 import lombok.RequiredArgsConstructor;

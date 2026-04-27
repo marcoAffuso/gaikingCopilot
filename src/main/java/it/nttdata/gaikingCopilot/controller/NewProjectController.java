@@ -1,7 +1,7 @@
 package it.nttdata.gaikingCopilot.controller;
 
 import java.io.IOException;
-
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -11,9 +11,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.WebSession;
 
 import it.nttdata.gaikingCopilot.ai.GenerateTAMavenSeleniumCucumberJunit;
-import it.nttdata.gaikingCopilot.copilot.GitHubTokenSessionService;
 import it.nttdata.gaikingCopilot.model.AutomationProjectRequest;
+import it.nttdata.gaikingCopilot.model.CreateProjectGitRequest;
+import it.nttdata.gaikingCopilot.service.copilot.GitHubTokenSessionService;
+import it.nttdata.gaikingCopilot.service.git.GitRepositoryService;
 import it.nttdata.gaikingCopilot.utility.OperationOnFileSystem;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -23,7 +26,10 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -42,6 +48,7 @@ public class NewProjectController {
 
     private final GenerateTAMavenSeleniumCucumberJunit generateTAMavenSeleniumCucumberJunit;
     private final GitHubTokenSessionService gitHubTokenSessionService;
+    private final GitRepositoryService gitRepositoryService;
 
     private static final String PROJECT_BASE_PATH_GRADLE = "newProject/selenium/java/gradle/junit/";
     private static final String PROJECT_BASE_PATH_MAVEN = "newProject/selenium/java/maven/junit/";
@@ -178,11 +185,11 @@ public class NewProjectController {
         return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Project deleted successfully."));
     }
 
-    @GetMapping("/newProject/createProjectGit")
+    @PostMapping("/newProject/createProjectGit")
     public ResponseEntity<Map<String, String>> createProjectGit(
-        @RequestParam String projectName,
+        @Valid @RequestBody CreateProjectGitRequest request,
         WebSession session
-    ) throws IOException {
+    ) throws IOException, GitAPIException, URISyntaxException {
         if (session == null || session.isExpired()) {
             return ResponseEntity.status(401).body(Map.of(MESSAGE_KEY, "Sessione scaduta. Effettua il login."));
         }       
@@ -192,13 +199,19 @@ public class NewProjectController {
             return ResponseEntity.status(401).build();
         }
 
-        Path projectPath = Path.of(projectName);
+        Path projectPath = Path.of(request.getProjectName());
         if (!Files.exists(projectPath)) {
             return ResponseEntity.notFound().build();
         }
 
-        OperationOnFileSystem operationOnFileSystem = new OperationOnFileSystem();
-        operationOnFileSystem.createProjectGit(projectPath);
+        String branchName = "main";   // oppure "master"
+        gitRepositoryService.initializeRepository(projectPath);
+        gitRepositoryService.addFiles(projectPath);
+        gitRepositoryService.commit(projectPath, "Initial commit");
+        gitRepositoryService.addRemote(projectPath, request.getRepositoryName());
+        gitRepositoryService.checkoutBranch(projectPath, branchName);
+        gitRepositoryService.push(projectPath, branchName, request.getUserGit(), request.getTokenGit());
+
         return ResponseEntity.ok(Map.of(MESSAGE_KEY, "Project Git created successfully."));
     }
 

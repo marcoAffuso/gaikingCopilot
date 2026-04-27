@@ -4,7 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.server.WebSession;
 
-import it.nttdata.gaikingCopilot.copilot.GitHubTokenSessionService;
+import it.nttdata.gaikingCopilot.service.copilot.GitHubTokenSessionService;
 import lombok.RequiredArgsConstructor;
 
 
