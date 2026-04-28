@@ -73,7 +73,7 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             String repairPrompt = buildJsonRepairPrompt(originalPrompt, latestCandidate, latestParserError);
             String retriedResponse = copilotService.getResponseCopilotWhitOutStreaming(
                     githubToken,
-                    request.modelName(),
+                    request.model(),
         					request.reasoningEffort(),
                     repairPrompt
             );
@@ -170,7 +170,7 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             throw new IllegalArgumentException("AutomationProjectRequest obbligatoria.");
         }
 
-        requireNotBlank(request.modelName(), "modelName");
+        requireNotBlank(request.model(), "modelName");
         requireNotBlank(request.projectName(), "projectName");
         requireNotBlank(request.groupId(), "groupId");
         requireNotBlank(request.javaVersion(), "javaVersion");
@@ -291,9 +291,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             request.projectName()
         );
 
-        String responseCopilString = copilotService.getResponseCopilotWithStreaming(githubToken, request.modelName(), request.reasoningEffort(), pomPrompt);
+        String responseCopilString = copilotService.getResponseCopilotWithStreaming(githubToken, request.model(), request.reasoningEffort(), pomPrompt);
 
-        log.info("Risposta of the {} model to build the pom.xml: {}", request.modelName(), responseCopilString);
+        log.info("Risposta of the {} model to build the pom.xml: {}", request.model(), responseCopilString);
         return validateAndCleanJson(request, githubToken, responseCopilString, pomPrompt);
    }
 
@@ -343,9 +343,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), basePagePrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), basePagePrompt);
 
-        log.info("Risposta of the {} model to build the base page: {}", request.modelName(), responseCopilString);
+        log.info("Risposta of the {} model to build the base page: {}", request.model(), responseCopilString);
         return validateAndCleanJson(request, githubToken, responseCopilString, basePagePrompt);
     }
 
@@ -405,9 +405,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), loginPagePrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), loginPagePrompt);
 
-        log.info("Risposta of the {} model to build the login page: {}", request.modelName(), responseCopilString);
+        log.info("Risposta of the {} model to build the login page: {}", request.model(), responseCopilString);
         return validateAndCleanJson(request, githubToken, responseCopilString, loginPagePrompt);
     }
 
@@ -511,9 +511,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - The output must be parseable by Jackson ObjectMapper.readTree()
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), pageObjectManagerPrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), pageObjectManagerPrompt);
 
-        log.info("Risposta of the {} model to build the PageObjectManager: {}", request.modelName(), responseCopilString);
+        log.info("Risposta of the {} model to build the PageObjectManager: {}", request.model(), responseCopilString);
         return validateAndCleanJson(request, githubToken, responseCopilString, pageObjectManagerPrompt);
     }
 
@@ -571,9 +571,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), driverFactoryPrompt);
+        String responseCopilString = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), driverFactoryPrompt);
 
-        log.info("Risposta of the {} model to build the DriverFactory: {}", request.modelName(), responseCopilString);
+        log.info("Risposta of the {} model to build the DriverFactory: {}", request.model(), responseCopilString);
         return validateAndCleanJson(request, githubToken, responseCopilString, driverFactoryPrompt);
     }
 
@@ -633,9 +633,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), hooksPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), hooksPrompt);
 
-        log.info("Risposta of the {} model to build the hooks: {}", request.modelName(), responseAddGptOss);
+        log.info("Risposta of the {} model to build the hooks: {}", request.model(), responseAddGptOss);
         return validateAndCleanJson(request, githubToken, responseAddGptOss, hooksPrompt);
     }
 
@@ -670,9 +670,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - No extra text or explanations.
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), hooksInterfacePrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), hooksInterfacePrompt);
 
-        log.info("Risposta of the {} model to build the HooksInterface: {}", request.modelName(), responseAddGptOss);
+        log.info("Risposta of the {} model to build the HooksInterface: {}", request.model(), responseAddGptOss);
         return validateAndCleanJson(request, githubToken, responseAddGptOss, hooksInterfacePrompt);
     }
 
@@ -708,9 +708,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - Single line JSON
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), testRunnerPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), testRunnerPrompt);
 
-        log.info("Risposta of the {} model to build the RunCucumberTest: {}", request.modelName(), responseAddGptOss);
+        log.info("Risposta of the {} model to build the RunCucumberTest: {}", request.model(), responseAddGptOss);
         return validateAndCleanJson(request, githubToken, responseAddGptOss, testRunnerPrompt);
     }
 
@@ -817,9 +817,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - The output must be parseable by Jackson ObjectMapper.readTree()
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), testContextPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), testContextPrompt);
 
-        log.info("Risposta of the {} model to build the TestContext: {}", request.modelName(), responseAddGptOss);
+        log.info("Risposta of the {} model to build the TestContext: {}", request.model(), responseAddGptOss);
         return validateAndCleanJson(request, githubToken, responseAddGptOss, testContextPrompt);
     }
 
@@ -956,9 +956,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - The output must be parseable by Jackson ObjectMapper.readTree()
         """, partsOfGroupId[0], partsOfGroupId[1]);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), loginStepsPrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), loginStepsPrompt);
 
-        log.info("Risposta of the {} model to build the LoginSteps: {}", request.modelName(), responseAddGptOss);
+        log.info("Risposta of the {} model to build the LoginSteps: {}", request.model(), responseAddGptOss);
         return validateAndCleanJson(request, githubToken, responseAddGptOss, loginStepsPrompt);
     }
 
@@ -988,9 +988,9 @@ public class GenerateTAMavenSeleniumCucumberJunit {
             - Output must be strictly valid JSON that can be parsed by com.fasterxml.jackson.databind.ObjectMapper.readTree().
         """);
 
-        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.modelName(), request.reasoningEffort(), loginFeaturePrompt);
+        String responseAddGptOss = copilotService.getResponseCopilotWhitOutStreaming(githubToken, request.model(), request.reasoningEffort(), loginFeaturePrompt);
 
-        log.info("Risposta of the {} model to build the login.feature: {}", request.modelName(), responseAddGptOss);
+        log.info("Risposta of the {} model to build the login.feature: {}", request.model(), responseAddGptOss);
         return validateAndCleanJson(request, githubToken, responseAddGptOss, loginFeaturePrompt);
     }
 

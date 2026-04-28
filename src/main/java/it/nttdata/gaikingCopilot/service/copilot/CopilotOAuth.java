@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.server.WebSession;
@@ -258,12 +259,18 @@ public class CopilotOAuth {
         revokeApi.setPayload(payload);
         revokeApi.setUsername(clientId);
         revokeApi.setPassword(clientSecret);
-        revokeApi.requestDeleteWithHeadersAndParameters();
+        ResponseEntity<String> revokeResponse = awaitResponse(
+            revokeApi.requestDeleteWithHeadersAndParameters(),
+            "revoca del grant GitHub"
+        );
 
-        if (revokeApi.getStatusCode() != 204) {
+        int statusCode = revokeResponse.getStatusCode().value();
+        String responseBody = revokeResponse.getBody();
+
+        if (statusCode != 204) {
             throw new IllegalStateException(
-                    "Revoca GitHub fallita. status=" + revokeApi.getStatusCode()
-                            + ", body=" + revokeApi.getResponse()
+                "Revoca GitHub fallita. status=" + statusCode
+                    + ", body=" + responseBody
             );
         }
 
@@ -286,14 +293,18 @@ public class CopilotOAuth {
         api.setHeaders(buildGithubJsonHeaders());
         api.setQueryParams(new LinkedMultiValueMap<>());
         api.setPayloadMap(formData);
-        api.requestPostUrlEncoded();
+        ResponseEntity<String> responseEntity = awaitResponse(
+            api.requestPostUrlEncoded(),
+            operationName
+        );
 
-        String rawBody = api.getResponse();
+        int statusCode = responseEntity.getStatusCode().value();
+        String rawBody = responseEntity.getBody();
 
         if (rawBody == null || rawBody.isBlank()) {
             throw new IllegalStateException(
                     "GitHub ha restituito una risposta vuota durante " + operationName
-                            + ". status=" + api.getStatusCode()
+                    + ". status=" + statusCode
             );
         }
 
@@ -306,13 +317,13 @@ public class CopilotOAuth {
                 );
             }
 
-            return new GitHubFormResponse(api.getStatusCode(), responseJson, rawBody);
+        return new GitHubFormResponse(statusCode, responseJson, rawBody);
 
         } catch (Exception ex) {
             log.error(
                     "Errore parsing risposta GitHub. operation={}, status={}, body={}",
                     operationName,
-                    api.getStatusCode(),
+            statusCode,
                     rawBody,
                     ex
             );
@@ -322,6 +333,19 @@ public class CopilotOAuth {
                     ex
             );
         }
+    }
+
+    private ResponseEntity<String> awaitResponse(ResponseEntity<String> responseEntity, String operationName) {
+        if (responseEntity == null) {
+            throw new IllegalStateException("GitHub ha restituito una risposta nulla durante " + operationName);
+        }
+
+        return responseEntity;
+    }
+
+    private ResponseEntity<String> awaitResponse(reactor.core.publisher.Mono<ResponseEntity<String>> responseMono, String operationName) {
+        ResponseEntity<String> responseEntity = responseMono.block();
+        return awaitResponse(responseEntity, operationName);
     }
 
     private IllegalStateException buildGithubException(String operationName, GitHubFormResponse githubResponse) {

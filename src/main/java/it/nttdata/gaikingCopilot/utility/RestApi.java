@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
 
-import org.springframework.core.io.buffer.DataBuffer;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -24,10 +24,9 @@ import io.netty.channel.ChannelOption;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.timeout.ReadTimeoutHandler;
-import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
-import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 
@@ -47,16 +46,7 @@ public class RestApi {
     private String payload;
 
     @Setter
-    private MultiValueMap<String, String> payloadMap;
-
-    @Getter
-    private int statusCode;
-
-    @Getter
-    private String response;
-
-    @Getter 
-    private Flux<DataBuffer> dataBufferFlux;    
+    private MultiValueMap<String, String> payloadMap;  
 
     @Setter
     private String username;
@@ -100,55 +90,37 @@ public class RestApi {
 
     }
 
-    public void requestPost(){
+    public Mono<ResponseEntity<String>> requestPost(){
         WebClient webClient = this.configureWebClient();
-        ResponseEntity<String> responseEntity = webClient.post()
+        return webClient.post()
                     .uri(this.url)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(this.payload)
-                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class))
-                    .block();
+                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class));
 
-        if (responseEntity != null) {
-            this.statusCode = responseEntity.getStatusCode().value();
-            this.response = responseEntity.getBody();
-        }
     }
 
-    public void requestGet(){
+    public Mono<ResponseEntity<String>> requestGet(){
 
         WebClient webClient = this.configureWebClient();
-        ResponseEntity<String> responseEntity = webClient.get()
+        return webClient.get()
                 .uri(this.url)
-                .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class))
-                .block();
-
-            if (responseEntity != null) {
-                this.statusCode = responseEntity.getStatusCode().value();
-                this.response = responseEntity.getBody();
-            }
+                .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class));
 
     }
 
-    public void requestPostWithHeadersWithoutParameters() {
+    public Mono<ResponseEntity<String>> requestPostWithHeadersWithoutParameters() {
         WebClient webClient = this.configureWebClient();
-
-        ResponseEntity<String> responseEntity = webClient.post()
+        return webClient.post()
                     .uri(this.url)
                     .headers(httpHeaders -> httpHeaders.addAll(headers))
                     .bodyValue(this.payload)
-                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class))
-                    .block();
-
-        if (responseEntity != null) {
-            this.statusCode = responseEntity.getStatusCode().value();
-            this.response = responseEntity.getBody();
-        }
+                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class));
     }
 
-    public void requestPostWithHeadersAndParameters(){
+    public Mono<ResponseEntity<String>> requestPostWithHeadersAndParameters(){
         WebClient webClient = this.configureWebClient();
-        ResponseEntity<String> responseEntity = webClient.post()
+        return webClient.post()
                     .uri(UriComponentsBuilder.fromUriString(this.url).queryParams(this.queryParams).build().toUri())
                     .headers(httpHeaders ->{ 
                         httpHeaders.addAll(headers); 
@@ -157,18 +129,13 @@ public class RestApi {
                         }
                     })
                     .bodyValue(this.payload)
-                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class))
-                    .block();
+                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class));
 
-        if (responseEntity != null) {
-            this.statusCode = responseEntity.getStatusCode().value();
-            this.response = responseEntity.getBody();
-        }
     }
 
-    public void requestPostUrlEncoded(){
+    public Mono<ResponseEntity<String>> requestPostUrlEncoded(){
         WebClient webClient = this.configureWebClient();
-            ResponseEntity<String> responseEntity = webClient.post()
+        return webClient.post()
                     .uri(UriComponentsBuilder.fromUriString(this.url).queryParams(this.queryParams).build().toUri())
                     .headers(httpHeaders ->{ 
                         httpHeaders.addAll(headers); 
@@ -178,18 +145,13 @@ public class RestApi {
                     })
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(BodyInserters.fromFormData(this.payloadMap))
-                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class))
-                    .block();
+                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class));
 
-            if (responseEntity != null) {
-                this.statusCode = responseEntity.getStatusCode().value();
-                this.response = responseEntity.getBody();
-            }
     }
 
-    public void requestGetWithHeadersAndParameters(){
+    public Mono<ResponseEntity<String>> requestGetWithHeadersAndParameters(){
         WebClient webClient = this.configureWebClient();
-        ResponseEntity<String> responseEntity = webClient.get()
+        return webClient.get()
                 .uri(UriComponentsBuilder.fromUriString(this.url).queryParams(this.queryParams).build().toUri())
                 .headers(httpHeaders ->{ 
                         httpHeaders.addAll(headers); 
@@ -197,19 +159,12 @@ public class RestApi {
                             httpHeaders.add(HttpHeaders.AUTHORIZATION, getBasicAuthHeader());
                         }
                     })
-                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class))
-                    .block();
-
-        if (responseEntity != null) {
-            this.statusCode = responseEntity.getStatusCode().value();
-            this.response = responseEntity.getBody();
-        }
-
+                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class));
     }
 
-    public void requestPatchWithHeadersAndParameters(){
+    public Mono<ResponseEntity<String>> requestPatchWithHeadersAndParameters(){
         WebClient webClient = this.configureWebClient();
-            ResponseEntity<String> responseEntity = webClient.patch()
+            return webClient.patch()
                     .uri(UriComponentsBuilder.fromUriString(this.url).queryParams(this.queryParams).build().toUri())
                     .headers(httpHeaders ->{ 
                         httpHeaders.addAll(headers); 
@@ -218,22 +173,17 @@ public class RestApi {
                         }
                     })
                     .bodyValue(this.payload)
-                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class))
-                    .block();
+                    .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class));
 
-        if (responseEntity != null) {
-            this.statusCode = responseEntity.getStatusCode().value();
-            this.response = responseEntity.getBody();
-        }
     }
 
-    public void requestDeleteWithHeadersAndParameters(){
+    public Mono<ResponseEntity<String>> requestDeleteWithHeadersAndParameters(){
         WebClient webClient = this.configureWebClient();
         URI uri = queryParams != null
                 ? UriComponentsBuilder.fromUriString(this.url).queryParams(this.queryParams).build().toUri()
                 : UriComponentsBuilder.fromUriString(this.url).build().toUri();
 
-        ResponseEntity<String> responseEntity = webClient.method(HttpMethod.DELETE)
+        return webClient.method(HttpMethod.DELETE)
                 .uri(uri)
                 .headers(httpHeaders -> {
                     if (headers != null) {
@@ -244,62 +194,7 @@ public class RestApi {
                     }
                 })
                 .bodyValue(this.payload)
-                .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class))
-                .block();
-
-        if (responseEntity != null) {
-            this.statusCode = responseEntity.getStatusCode().value();
-            this.response = responseEntity.getBody();
-        }
+                .exchangeToMono(webClientResponse -> webClientResponse.toEntity(String.class));
 
     }
-
-
-    public void downloadApp() {
-
-        WebClient webClient = this.configureWebClient();
-        URI uri = UriComponentsBuilder.fromUriString(this.url).queryParams(queryParams).build().toUri();
-        log.info("URL: " + this.url);
-        log.info("Query Params: " + queryParams.toSingleValueMap().toString());
-        log.info("URI: " + uri.toString()); 
-
-        ResponseEntity<String> initialResponse = webClient.get()
-            .uri(uri)
-            .headers(httpHeaders -> {
-                httpHeaders.addAll(headers);
-                if (this.username != null && this.password != null) {
-                    httpHeaders.add(HttpHeaders.AUTHORIZATION, getBasicAuthHeader());
-                }
-            })
-                //.retrieve()
-                //.toBodilessEntity()
-            .exchangeToMono(clientResponse ->clientResponse.toEntity(String.class))
-            .block();
-
-        if (initialResponse.getStatusCode().is3xxRedirection()) {
-            URI location = initialResponse.getHeaders().getLocation();
-            if (location != null) {
-                String redirectUrl = location.toString();
-                log.info("Redirecting to: " + redirectUrl);
-
-                this.dataBufferFlux = webClient.get()
-                    .uri(redirectUrl)
-                    .headers(httpHeaders -> {
-                            httpHeaders.addAll(headers);
-                        if (this.username != null && this.password != null) {
-                            httpHeaders.add(HttpHeaders.AUTHORIZATION, getBasicAuthHeader());
-                        }
-                    })
-                    .retrieve()
-                    .bodyToFlux(DataBuffer.class);
-
-                this.statusCode = initialResponse.getStatusCode().value();
-            } else {
-                log.error("Redirection location is null.");
-            }
-        } else {
-            log.error("Unexpected status code: " + initialResponse.getStatusCode());
-        }
-    }
-
 }

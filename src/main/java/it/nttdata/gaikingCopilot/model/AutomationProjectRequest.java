@@ -2,7 +2,7 @@ package it.nttdata.gaikingCopilot.model;
 
 public record AutomationProjectRequest(
 
-        String modelName,
+        String model,
         String reasoningEffort,
         String projectName,
         String groupId,

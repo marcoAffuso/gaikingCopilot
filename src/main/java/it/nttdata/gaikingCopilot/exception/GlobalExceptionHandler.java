@@ -1,5 +1,6 @@
 package it.nttdata.gaikingCopilot.exception;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +37,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getStatusCode()).body(body);
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, ConstraintViolationException.class, URISyntaxException.class, GitAPIException.class})
+    @ExceptionHandler(
+        {
+            IllegalArgumentException.class, 
+            ConstraintViolationException.class, 
+            URISyntaxException.class, 
+            GitAPIException.class,
+            IOException.class
+        }
+    )
     public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(Exception ex) {
         log.warn("Handled bad request exception. exceptionType={}, message={}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
 

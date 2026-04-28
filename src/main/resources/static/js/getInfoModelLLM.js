@@ -4,16 +4,19 @@
 	const getModelLlmBtn = document.getElementById("getModelLlmBtn");
 	const generateProjectMavenBtn = document.getElementById("generateProjectMavenBtn");
 	const generateProjectGradleBtn = document.getElementById("generateProjectGradleBtn");
+	const generateConfluenceTestCaseBtn = document.getElementById("generateConfluenceTestCaseBtn");
 	const junitConfigurationModal = document.getElementById("junitConfigurationModal");
+	const confluenceConfigurationModal = document.getElementById("confluenceConfigurationModal");
 	const modelSelectionModal = document.getElementById("modelSelectionModal");
 	const modelSelectionStatus = document.getElementById("modelSelectionStatus");
 	const modelSelectionList = document.getElementById("modelSelectionList");
 	const modelsById = new Map();
+	const primaryConfigurationModal = junitConfigurationModal ?? confluenceConfigurationModal;
 	let modelsLoaded = false;
-	let reopenJunitConfigurationModal = false;
-	let preserveReasoningEffortsOnNextJunitHide = false;
+	let reopenConfigurationModal = false;
+	let preserveReasoningEffortsOnNextConfigurationHide = false;
 
-	if (!modelInput || !reasoningEffortSelect || !getModelLlmBtn || !generateProjectMavenBtn || !generateProjectGradleBtn || !junitConfigurationModal || !modelSelectionModal || !modelSelectionStatus || !modelSelectionList) {
+	if (!modelInput || !reasoningEffortSelect || !getModelLlmBtn || !primaryConfigurationModal || !modelSelectionModal || !modelSelectionStatus || !modelSelectionList) {
 		return;
 	}
 
@@ -132,12 +135,12 @@
 	});
 
 	getModelLlmBtn.addEventListener("click", () => {
-		preserveReasoningEffortsOnNextJunitHide = true;
+		preserveReasoningEffortsOnNextConfigurationHide = true;
 	});
 
-	junitConfigurationModal.addEventListener("hidden.bs.modal", () => {
-		if (preserveReasoningEffortsOnNextJunitHide) {
-			preserveReasoningEffortsOnNextJunitHide = false;
+	primaryConfigurationModal.addEventListener("hidden.bs.modal", () => {
+		if (preserveReasoningEffortsOnNextConfigurationHide) {
+			preserveReasoningEffortsOnNextConfigurationHide = false;
 			return;
 		}
 
@@ -145,13 +148,13 @@
 	});
 
 	modelSelectionModal.addEventListener("hidden.bs.modal", () => {
-		if (!reopenJunitConfigurationModal) {
+		if (!reopenConfigurationModal) {
 			return;
 		}
 
-		reopenJunitConfigurationModal = false;
-		const junitModalInstance = globalThis.bootstrap?.Modal.getOrCreateInstance(junitConfigurationModal);
-		junitModalInstance?.show();
+		reopenConfigurationModal = false;
+		const configurationModalInstance = globalThis.bootstrap?.Modal.getOrCreateInstance(primaryConfigurationModal);
+		configurationModalInstance?.show();
 	});
 
 	modelSelectionList.addEventListener("click", (event) => {
@@ -168,12 +171,15 @@
 		const modelId = selectionButton.dataset.modelValue ?? "";
 		modelInput.value = modelId;
 		populateReasoningEfforts(modelsById.get(modelId));
-		reopenJunitConfigurationModal = true;
+		reopenConfigurationModal = true;
 
 		const bootstrapModal = globalThis.bootstrap?.Modal.getInstance(modelSelectionModal);
 		bootstrapModal?.hide();
 	});
 
-	generateProjectMavenBtn.addEventListener("click", resetReasoningEfforts);
-	generateProjectGradleBtn.addEventListener("click", resetReasoningEfforts);
+	generateProjectMavenBtn?.addEventListener("click", resetReasoningEfforts);
+	generateProjectGradleBtn?.addEventListener("click", resetReasoningEfforts);
+	generateConfluenceTestCaseBtn?.addEventListener("click", () => {
+		preserveReasoningEffortsOnNextConfigurationHide = false;
+	});
 })();

@@ -1,0 +1,16 @@
+github:
+  oauth:
+    client-id: Ov23liKP6UnIhoZHmTqU
+    client-secret: bffa937d816106df5ca5472116263dd630a0fed9
+    device-code-url: https://github.com/login/device/code
+    access-token-url: https://github.com/login/oauth/access_token
+
+confluence:
+  username: marco.affuso@nttdata.com
+  api:
+    url: /wiki/rest/api/content
+    token: ATATT3xFfGF0aaxrt3pX8XX46Jw4cOlbEKK2RcnZiUepIYTqNWSSPI0CCCO1UTqquzr4bBSmdpZ55SzW2y3-_9XgYwRrmoqS0b0zL-GrHa8l0BB7ID7N_B0BR9Be9GjZlkhjL0Ql0Ma6wAzBJ-3tGMdhvkpzLQx8cCFahnDO-drBy4HB1rJaPTk=081ACFA4
+  start:
+    page: 0
+  limit:
+    page: 500    

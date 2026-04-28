@@ -37,3 +37,11 @@ curl.exe --request GET `
 
   # Per la homePage
   http://localhost:8080/homePage
+
+  http://localhost:8080/generateTestCase.html
+
+  https://nttdata-4store.atlassian.net/
+
+  String prompt= promptSafety
+        .replace("<SPACE_KEY>", "UF")
+        .replace("<PAGE_TITLE>", "Entrance Unit");

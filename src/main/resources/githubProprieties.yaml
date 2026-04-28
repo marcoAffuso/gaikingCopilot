@@ -1,6 +1,0 @@
-github:
-  oauth:
-    client-id: Ov23liKP6UnIhoZHmTqU
-    client-secret: bffa937d816106df5ca5472116263dd630a0fed9
-    device-code-url: https://github.com/login/device/code
-    access-token-url: https://github.com/login/oauth/access_token

@@ -58,9 +58,87 @@
 		<section id="section" class="page-footer home-section">
 			<div class="container">
 				<div class="d-flex align-items-center justify-content-center section-content">
+					<div class="action-box-grid">
+						<div class="action-box">
+							<h2 class="action-box-title">Generate Test Case With</h2>
+							<div class="action-buttons">
+								<button id="confluenceBtn" type="button" class="btn action-button action-button-confluence" data-bs-toggle="modal" data-bs-target="#confluenceConfigurationModal">Confluence</button>
+								<button type="button" class="btn action-button action-button-excel">Excel</button>
+								<button type="button" class="btn action-button action-button-word">Word</button>
+								<button type="button" class="btn action-button action-button-md">File MD</button>
+							</div>
+						</div>
+						<div class="action-box">
+							<h2 class="action-box-title">Generated Test Case</h2>
+							<div id="generatedTestCasePanel" class="generated-project-panel">
+								<p id="generatedTestCaseText" class="generated-project-text mb-0">No test case generated yet.</p>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</section>
+
+		<div class="modal fade" id="confluenceConfigurationModal" tabindex="-1" aria-labelledby="confluenceConfigurationModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable confluence-configuration-dialog">
+				<div class="modal-content language-modal-content">
+					<div class="modal-header language-modal-header">
+						<button type="button" class="btn modal-back-button" data-bs-dismiss="modal">Back</button>
+						<h2 class="modal-title language-modal-title" id="confluenceConfigurationModalLabel">Confluence Configuration</h2>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body language-modal-body">
+						<form id="confluenceConfigurationForm" class="configuration-form" method="get">
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="model">Model LLM</label>
+								<div class="configuration-form-inline-field">
+									<input class="form-control configuration-form-input" id="model" name="model" type="text" readonly>
+									<label class="configuration-form-label mb-0" for="reasoningEffort">Reasoning Efforts:</label>
+									<select class="form-control configuration-form-input" id="reasoningEffort" name="reasoningEffort">
+										<option value="NA" selected>NA</option>
+									</select>
+									<button id="getModelLlmBtn" type="button" class="btn configuration-secondary-button" data-bs-toggle="modal" data-bs-target="#modelSelectionModal">Get Model LLM</button>
+								</div>
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="confluenceUrl">Confluence Url</label>
+								<input class="form-control configuration-form-input" id="confluenceUrl" name="confluenceUrl" type="url">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="confluenceSpace">Confluence Space</label>
+								<input class="form-control configuration-form-input" id="confluenceSpace" name="spaceKey" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="confluencePage">Confluence Page</label>
+								<input class="form-control configuration-form-input" id="confluencePage" name="pageTitle" type="text">
+							</div>
+							<div class="configuration-form-row">
+								<label class="configuration-form-label" for="outputDir">Output dir</label>
+								<input class="form-control configuration-form-input" id="outputDir" name="outputDir" type="text" value="confluence/testsCases">
+							</div>
+							<div class="configuration-form-actions">
+								<button id="generateConfluenceTestCaseBtn" type="submit" class="btn configuration-submit-button configuration-submit-button-confluence">Generate Test Case</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="modelSelectionModal" tabindex="-1" aria-labelledby="modelSelectionModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+				<div class="modal-content language-modal-content">
+					<div class="modal-header language-modal-header">
+						<h2 class="modal-title language-modal-title" id="modelSelectionModalLabel">Model LLM</h2>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body language-modal-body">
+						<div id="modelSelectionStatus" class="model-selection-status">Loading available models...</div>
+						<div id="modelSelectionList" class="model-selection-list d-none"></div>
+					</div>
+				</div>
+			</div>
+		</div>
 
 		<footer id="footer" class="footer py-2 bg-light page-footer">
 			<div class="container">
@@ -79,6 +157,8 @@
 		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
 		integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
 		crossorigin="anonymous"></script>
+		<script th:src="@{/js/gestioneGenerateTestCaseButton.js}" src="/js/gestioneGenerateTestCaseButton.js"></script>
+		<script th:src="@{/js/getInfoModelLLM.js}" src="/js/getInfoModelLLM.js"></script>
 
 	</body>
 </html>
