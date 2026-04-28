@@ -16,6 +16,7 @@ import it.nttdata.gaikingCopilot.model.CreateProjectGitRequest;
 import it.nttdata.gaikingCopilot.service.copilot.GitHubTokenSessionService;
 import it.nttdata.gaikingCopilot.service.git.GitRepositoryService;
 import it.nttdata.gaikingCopilot.utility.OperationOnFileSystem;
+import it.nttdata.gaikingCopilot.utility.ValidateJunitForm;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -82,7 +83,34 @@ public class NewProjectController {
             return Map.of(MESSAGE_KEY, "Token GitHub non disponibile. Effettua il login.");
         }
 
-        validateJunitVersion(junitVersion);
+        ValidateJunitForm validateJunitForm = new ValidateJunitForm();
+        validateJunitForm.validateRequiredFields(
+            projectName,
+            groupId,
+            javaVersion,
+            seleniumVersion,
+            junitVersion,
+            junitPlatformVersion,
+            cucumberVersion,
+            webdrivermanagerVersion,
+            surefireVersion,
+            compilerPluginVersion
+        );
+        validateJunitForm.validateAllowedTextFields(
+            projectName,
+            groupId,
+            javaVersion,
+            seleniumVersion,
+            junitVersion,
+            junitPlatformVersion,
+            cucumberVersion,
+            webdrivermanagerVersion,
+            surefireVersion,
+            compilerPluginVersion
+        );
+        validateJunitForm.validateProjectName(projectName);
+        validateJunitForm.validateGroupId(groupId);
+        validateJunitForm.validateJunitVersion(junitVersion);
 
         log.info("Returning Gradle project generation response. sessionId={}, projectPath={}", session.getId(), PROJECT_BASE_PATH_GRADLE + projectName);
 
@@ -129,7 +157,34 @@ public class NewProjectController {
 
         String githubToken = gitHubTokenSessionService.getRequiredAccessToken(session);
 
-        validateJunitVersion(junitVersion);
+        ValidateJunitForm validateJunitForm = new ValidateJunitForm();
+        validateJunitForm.validateRequiredFields(
+            projectName,
+            groupId,
+            javaVersion,
+            seleniumVersion,
+            junitVersion,
+            junitPlatformVersion,
+            cucumberVersion,
+            webdrivermanagerVersion,
+            surefireVersion,
+            compilerPluginVersion
+        );
+        validateJunitForm.validateAllowedTextFields(
+            projectName,
+            groupId,
+            javaVersion,
+            seleniumVersion,
+            junitVersion,
+            junitPlatformVersion,
+            cucumberVersion,
+            webdrivermanagerVersion,
+            surefireVersion,
+            compilerPluginVersion
+        );
+        validateJunitForm.validateProjectName(projectName);
+        validateJunitForm.validateGroupId(groupId);
+        validateJunitForm.validateJunitVersion(junitVersion);
         
         this.generateTAMavenSeleniumCucumberJunit.generateAutomationJavaSeleniumCucumberProject(request, githubToken);
 
@@ -250,29 +305,7 @@ public class NewProjectController {
         return session != null ? session.getId() : "unknown";
     }
 
-    private void validateJunitVersion(String junitVersion) {
-        String[] versionParts = junitVersion.split("\\.");
-        if (versionParts.length == 0) {
-            throw new IllegalArgumentException("Junit Version must start with a major version greater than 4.");
-        }
 
-        try {
-            int majorVersion = Integer.parseInt(versionParts[0]);
-            if (majorVersion <= 4) {
-                throw new IllegalArgumentException("Junit Version must start with a major version greater than 4.");
-            }
-
-            for (String versionPart : versionParts) {
-                if (versionPart.isBlank()) {
-                    throw new IllegalArgumentException("Junit Version must start with a major version greater than 4.");
-                }
-
-                Integer.parseInt(versionPart);
-            }
-        } catch (NumberFormatException ex) {
-            throw new IllegalArgumentException("Junit Version must start with a major version greater than 4.", ex);
-        }
-    }
 
 
 

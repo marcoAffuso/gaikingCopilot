@@ -144,6 +144,7 @@ src/main/resources
 
 | Utility | Responsabilita |
 | --- | --- |
+| `ValidateJunitForm` | validazione imperativa dei campi della modale JUnit con un metodo `void` per ciascuna regola applicativa |
 | `ProjectFileWriterTool` | scrittura dei file generati a partire da un JSON `{ files: [...] }` |
 | `ReadAndWriteJson` | parsing, serializzazione, sanitizzazione e validazione JSON |
 | `RestApi` | wrapper WebClient per chiamate HTTP/HTTPS esterne |
@@ -331,6 +332,9 @@ Il generatore richiede che Copilot restituisca JSON valido monolinea con path e 
 La schermata `createNewProjectTa.html` applica inoltre controlli client-side specifici per:
 
 - `Repository Name` nella modale Git, che deve rispettare il formato `https://... .git`
+- i campi testuali della modale JUnit, che devono essere valorizzati e composti solo da caratteri ammessi
+- `Project Name`, che non puo contenere cifre
+- `Group Id`, che deve rispettare il formato `stringa1.stringa2` con sole lettere
 - `Junit Version`, che deve avere major strettamente maggiore di 4
 
 ## Validazioni
@@ -339,7 +343,8 @@ La schermata `createNewProjectTa.html` applica inoltre controlli client-side spe
 
 - `@Validated` in `NewProjectController`
 - `@NotBlank` sui query parameter di generazione progetto
-- validazione imperativa `validateJunitVersion(...)` in `NewProjectController` per imporre una major version JUnit strettamente maggiore di 4 senza usare regex potenzialmente problematiche
+- `NewProjectController` invoca esplicitamente `ValidateJunitForm` sui flussi Maven e Gradle per applicare in backend le stesse regole della modale JUnit
+- `ValidateJunitForm` espone metodi separati `validateRequiredFields(...)`, `validateAllowedTextFields(...)`, `validateProjectName(...)`, `validateGroupId(...)` e `validateJunitVersion(...)`
 - controlli espliciti su sessione e token nei controller che richiedono autenticazione
 
 ### Validazioni lato DTO
@@ -362,7 +367,11 @@ La schermata `createNewProjectTa.html` applica inoltre controlli client-side spe
 La pagina `createNewProjectTa.html` e il relativo JavaScript applicano validazioni preventive sui form, incluse:
 
 - verifica del formato del repository Git remoto nella modale `Create Git Project`
-- controllo del campo `Junit Version` per impedire versioni con major minore o uguale a 4
+- verifica dei campi obbligatori della modale JUnit
+- verifica dei caratteri ammessi nei campi testuali della modale JUnit
+- controllo di `Project Name` per impedire cifre
+- controllo di `Group Id` per imporre il formato con sole lettere e un solo punto
+- controllo del campo `Junit Version` per impedire versioni con major minore o uguale a 4 o formati non accettati
 - pattern HTML e controlli JavaScript coerenti con i vincoli backend
 
 ## Logging

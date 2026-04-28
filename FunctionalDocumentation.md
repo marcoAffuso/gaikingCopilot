@@ -237,9 +237,13 @@ Utente Applicativo
 
 ### Regole funzionali specifiche della configurazione JUnit
 
+- tutti i campi testuali della modale sono obbligatori
+- i campi testuali accettano solo lettere, numeri, spazio, punto, underscore e trattino
+- `Project Name` non puo contenere cifre
+- `Group Id` deve rispettare il formato `stringa1.stringa2` con sole lettere e un solo punto
 - `Junit Version` deve avere una major version strettamente maggiore di 4
 - valori come `4.X.X`, `4.13.2` o stringhe non numeriche non sono ammessi
-- il controllo viene applicato prima dell'invio della richiesta e viene garantito anche lato backend
+- il controllo viene applicato prima dell'invio della richiesta e viene garantito anche lato backend con le stesse regole
 
 ### Esito atteso
 
@@ -248,7 +252,10 @@ Il sistema mostra un messaggio di progetto creato correttamente e abilita le azi
 ### Scenari alternativi
 
 - campi obbligatori mancanti: il sistema mostra un messaggio di validazione
-- valori non conformi ai vincoli funzionali, inclusa una `Junit Version` con major minore o uguale a 4: il sistema blocca l'operazione
+- presenza di caratteri speciali non ammessi nei campi testuali: il sistema blocca l'operazione
+- `Project Name` contenente cifre: il sistema blocca l'operazione
+- `Group Id` non conforme al formato richiesto: il sistema blocca l'operazione
+- `Junit Version` non valida, inclusi major minore o uguale a 4 o prefissi non ammessi: il sistema blocca l'operazione
 - sessione non valida: l'utente viene reindirizzato al login
 
 ### Postcondizioni
@@ -506,6 +513,9 @@ flowchart TD
 ## Regole di generazione progetto
 
 - il progetto viene generato solo se tutti i parametri obbligatori sono valorizzati
+- i campi testuali della configurazione devono rispettare il set di caratteri ammessi
+- `Project Name` non puo contenere cifre
+- `Group Id` deve avere il formato `stringa1.stringa2` con sole lettere
 - `Junit Version` deve rappresentare una versione valida con major strettamente maggiore di 4
 - la funzionalita effettivamente implementata lato generazione automatica e quella Maven Selenium JUnit Cucumber
 - il progetto generato viene salvato localmente e poi reso disponibile per le azioni successive
@@ -585,6 +595,9 @@ Il sistema deve consentire il logout locale e tentare la revoca del grant GitHub
 
 - dato un utente autenticato, quando compila tutti i campi richiesti e avvia la generazione Maven, allora il sistema restituisce il progetto generato
 - dato un utente che lascia campi obbligatori vuoti, quando tenta di generare il progetto, allora il sistema mostra un errore di validazione
+- dato un utente che inserisce caratteri speciali non ammessi in un campo testuale, quando tenta di generare il progetto, allora il sistema blocca l'operazione con messaggio di validazione
+- dato un utente che inserisce un `Project Name` contenente cifre, quando tenta di generare il progetto, allora il sistema blocca l'operazione con messaggio di validazione
+- dato un utente che inserisce un `Group Id` non conforme al formato richiesto, quando tenta di generare il progetto, allora il sistema blocca l'operazione con messaggio di validazione
 - dato un utente che inserisce una `Junit Version` con major minore o uguale a 4, quando tenta di generare il progetto, allora il sistema blocca l'operazione con messaggio di validazione
 
 ### Create Git Project
